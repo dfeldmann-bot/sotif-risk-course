@@ -21,7 +21,9 @@ RED_FILL, GREEN_FILL = PatternFill("solid", fgColor="F4CCCC"), PatternFill("soli
 BOX = Border(bottom=Side(style="thin", color="BFBFBF"))
 SCI, PCT, INT = "0.00E+00", "0.0%", "#,##0"
 
-cells, scen = ub_sim.generate()
+cells, scen, concrete = ub_sim.generate()
+cop_eff = ub_sim.copula_effect()
+NC = len(concrete); CL = 5 + NC  # last row of Concrete sheet
 bayes_q95, bayes_mean = ub_sim.bayes_quantile(cells, scen)
 
 wb = Workbook()
@@ -64,7 +66,9 @@ lines = [
     ("Where each term comes from", "share_l: fleet operations logs (context tagging) · λ_HB: open-loop replay of targeted logs through perception+planner, counting unintended brake requests · P(collision|HB): kinematic Monte Carlo of the follower's response · P(MAIS2+|Δv): injury risk curve (illustrative; real curves are fit to accident data)."),
     ("Key modelling assumption", "λ_HB depends on trigger context and speed, not on whether a follower is present (forward perception does not see the follower). So 20 evidence cells serve 100 scenarios."),
     ("Three ways to judge the target", "(1) Point estimate — not acceptable as evidence. (2) Bonferroni: simultaneous upper bounds on every estimated term, multiplied — rigorous but very conservative. (3) Bayesian posterior 95% quantile of R (Jeffreys priors) — computed in ub_sim.py."),
-    ("Sheets", "Inputs → HB Evidence (20 cells) → Scenarios (100 rows) → Summary → Validation Targets (how much more evidence each cell needs)."),
+    ("Concrete scenarios", "1,000 made-up concrete scenarios (10 per logical scenario). Parameters drawn from an importance-sampling proposal q (later reactions, longer phantom brakes, shorter headways) through a Gaussian copula; each carries the exact weight w = f(θ)/q(θ) so the 10 runs estimate the real-world probability."),
+    ("Parameter dependence", "Ego speed, follower time headway, follower reaction time and follower deceleration are coupled by a Gaussian copula (see sheet 'Gaussian Copula'): each keeps its own marginal distribution, the correlation matrix R sets how they move together."),
+    ("Sheets", "Inputs → HB Evidence (20 cells) → Scenarios (100 logical) → Concrete Scenarios (1,000) → Gaussian Copula → Summary → Validation Targets."),
     ("Colour code", "Blue on yellow = input/assumption · blue = evidence value (from data or simulation) · black = formula · green = link to another sheet · grey italic = synthetic ground truth, for comparison only (unknown in reality)."),
 ]
 for i, (k, v) in enumerate(lines):
@@ -87,6 +91,8 @@ params = [
     ("Number of scenarios (collision-probability bounds)", "=COUNTA(Scenarios!A6:A105)", "0", "Formula"),
     ("Per-bound confidence C_b (Bonferroni)", "=1-(1-B6)/(B8+B9)", "0.000000", "Simultaneous bounds: Σ(1−C_b) = 1−C over all estimated terms."),
     ("Known-scenario budget (1−ε)·A_H", "=(1-B7)*B5", SCI, "Formula"),
+    ("Injury curve: Δv at 50% MAIS2+ [km/h]", ub_sim.INJ_MID, "0.0", "Illustrative logistic P(MAIS2+|Δv) = 1/(1+exp(−(Δv−Δv50)/s)). Drives the Concrete Scenarios sheet live; the 2,000-run column in Scenarios was computed with the build-time value."),
+    ("Injury curve: scale s [km/h]", ub_sim.INJ_SCALE, "0.0", "Illustrative."),
 ]
 for i, (p, v, fmt, n) in enumerate(params):
     r = 5 + i
@@ -145,8 +151,10 @@ cols = ["ID", "Trigger context", "Speed band", "Follower headway", "Evidence cel
         "λ̂ [1/h]", "λ upper (C_b) [1/h]", "Sim runs N", "Collisions c", "P̂(coll|HB)", "P upper (C_b)",
         "E[P(MAIS2+)|coll]", "Mean Δv at contact [km/h]", "Point contribution [1/h]", "Upper contribution [1/h]",
         "Share of point risk", "Screening bound share·λ_U [1/h]", "Harm weight share·P_U·inj",
-        "True λ (synthetic) [1/h]", "Contribution with true λ [1/h]"]
-header(sc, 5, cols, [6, 30, 11, 20, 8, 9, 9, 9, 10, 11, 11, 8, 9, 10, 10, 10, 10, 12, 12, 9, 12, 12, 12, 12])
+        "True λ (synthetic) [1/h]", "Contribution with true λ [1/h]",
+        "Σ w of 10 concrete", "Effective sample size (Σw)²/Σw²", "Collisions among 10 concrete",
+        "IS estimate E[coll·P(MAIS2+)]", "IS point contribution [1/h]"]
+header(sc, 5, cols, [6, 30, 11, 20, 8, 9, 9, 9, 10, 11, 11, 8, 9, 10, 10, 10, 10, 12, 12, 9, 12, 12, 12, 12, 10, 12, 10, 12, 12])
 for i, s in enumerate(scen):
     r = 6 + i
     put(sc, f"A{r}", s["id"]); put(sc, f"B{r}", s["trigger"]); put(sc, f"C{r}", s["speed"]); put(sc, f"D{r}", s["headway"]); put(sc, f"E{r}", s["cell"])
@@ -169,6 +177,12 @@ for i, s in enumerate(scen):
     put(sc, f"V{r}", f"=I{r}*O{r}*P{r}", BLACK, SCI)
     put(sc, f"W{r}", f"=INDEX('HB Evidence'!$I$6:$I$25,MATCH(E{r},'HB Evidence'!$A$6:$A$25,0))", GREY, SCI)
     put(sc, f"X{r}", f"=I{r}*W{r}*N{r}*P{r}", GREY, SCI)
+    CS = "'Concrete Scenarios'!"
+    put(sc, f"Y{r}", f"=SUMIF({CS}$B$6:$B${CL},A{r},{CS}$N$6:$N${CL})", GREEN, "0.000")
+    put(sc, f"Z{r}", f"=IF(SUMIF({CS}$B$6:$B${CL},A{r},{CS}$T$6:$T${CL})>0,Y{r}^2/SUMIF({CS}$B$6:$B${CL},A{r},{CS}$T$6:$T${CL}),0)", BLACK, "0.0")
+    put(sc, f"AA{r}", f"=SUMIF({CS}$B$6:$B${CL},A{r},{CS}$O$6:$O${CL})", GREEN, "0")
+    put(sc, f"AB{r}", f"=SUMIF({CS}$B$6:$B${CL},A{r},{CS}$S$6:$S${CL})/COUNTIF({CS}$B$6:$B${CL},A{r})", GREEN, SCI)
+    put(sc, f"AC{r}", f"=I{r}*J{r}*AB{r}", BLACK, SCI)
 sc.freeze_panes = "F6"
 put(sc, "A107", "Clopper–Pearson upper bound: P_U = BETAINV(C_b; c+1; N−c). With c = 0 and N = 2000 this is ≈ 7.8/2000 at C_b — the rule of three again, with a Bonferroni-sized confidence.", GREY)
 
@@ -228,7 +242,148 @@ put(sm, "A49", "Risk if λ were known exactly"); put(sm, "B49", "=SUM(Scenarios!
 put(sm, "A50", "True overall HB rate Σ share·λ"); put(sm, "B50", "=SUMPRODUCT(Scenarios!I6:I105,Scenarios!W6:W105)", GREY, SCI); put(sm, "C50", "1/h")
 put(sm, "A51", "P(field-only zero-failure test of row 21 passes)"); put(sm, "B51", "=EXP(-B50*B21)", GREY, PCT)
 put(sm, "D51", "The field-only target looks cheap, but at the true HB rate it is close to a coin flip; a k > 0 plan costs more hours (lesson 1). It also needs avg P(harm|HB), which only the scenario model provides.")
+put(sm, "A53", "Same calculation from the 1,000 concrete scenarios only", BOLD)
+put(sm, "A54", "Point estimate R̂ from 1,000 importance-sampled concrete runs"); put(sm, "B54", "=SUM(Scenarios!AC6:AC105)", BLACK, SCI); put(sm, "C54", "1/h")
+put(sm, "D54", "Uses λ̂ from HB Evidence and the weighted concrete outcomes: Σ share·λ̂·(1/10)Σ w·1{coll}·P(MAIS2+).")
+put(sm, "A55", "Ratio to the 200,000-run plain Monte Carlo estimate (row 6)"); put(sm, "B55", "=B54/B6", BLACK, "0.00")
+put(sm, "D55", "Same order of magnitude from 200× fewer simulations — that is what importance sampling buys. Plain MC with 10 runs per scenario would almost always see zero collisions.")
+put(sm, "A56", "Collisions among the 1,000 concrete scenarios"); put(sm, "B56", "=SUM('Concrete Scenarios'!O6:O%d)" % (5 + len(concrete)), GREEN, "0")
+put(sm, "A57", "Median effective sample size per logical scenario (of 10)"); put(sm, "B57", "=MEDIAN(Scenarios!Z6:Z105)", BLACK, "0.0")
+put(sm, "D57", "Low ESS means a few heavy weights dominate: the proposal q is too far from f for that scenario. Report ESS with every IS estimate.")
 put(sm, "A46", "Sum of their screening bounds"); put(sm, "B46", "=SUMIF(Scenarios!U6:U105,\"<=\"&B11*0.001)", BLACK, SCI); put(sm, "C46", "1/h")
+
+# =============== Concrete Scenarios ===============
+cs = wb.create_sheet("Concrete Scenarios")
+title(cs, "1,000 concrete scenarios (made up) — 10 per logical scenario",
+      "Parameters drawn from the importance-sampling proposal q via the Gaussian copula; w = f(θ)/q(θ) re-weights each run to the real-world model f.")
+header(cs, 5, ["Concrete ID", "Logical ID", "Trigger context", "Speed band", "Follower headway",
+               "Ego speed v_e [km/h]", "Follower speed v_f [km/h]", "Time headway h [s]", "Gap [m]",
+               "Phantom decel a_e [m/s²]", "Phantom duration t_b [s]", "Follower reaction T_r [s]", "Follower decel a_f [m/s²]",
+               "IS weight w = f/q", "Collision (1/0)", "Δv at contact [km/h]", "P(MAIS2+ | Δv)",
+               "w · collision", "w · collision · P(MAIS2+)", "w²"],
+       [9, 8, 30, 11, 20, 10, 10, 10, 9, 10, 10, 10, 10, 11, 9, 10, 10, 10, 12, 10])
+for i, c in enumerate(concrete):
+    r = 6 + i
+    put(cs, f"A{r}", c["cid"]); put(cs, f"B{r}", c["lid"]); put(cs, f"C{r}", c["trigger"]); put(cs, f"D{r}", c["speed"]); put(cs, f"E{r}", c["headway"])
+    put(cs, f"F{r}", round(c["v"], 2), BLUE, "0.0"); put(cs, f"G{r}", round(c["vf"], 2), BLUE, "0.0"); put(cs, f"H{r}", round(c["h"], 3), BLUE, "0.00")
+    put(cs, f"I{r}", f"=H{r}*G{r}/3.6", BLACK, "0.0")
+    put(cs, f"J{r}", round(c["a_e"], 2), BLUE, "0.00"); put(cs, f"K{r}", round(c["t_b"], 3), BLUE, "0.00")
+    put(cs, f"L{r}", round(c["t_r"], 3), BLUE, "0.00"); put(cs, f"M{r}", round(c["a_f"], 2), BLUE, "0.00")
+    put(cs, f"N{r}", c["w"], BLUE, "0.0000", note="Exact density ratio f/q incl. Gaussian-copula densities (ub_sim.log_density).") if i == 0 else put(cs, f"N{r}", c["w"], BLUE, "0.0000")
+    put(cs, f"O{r}", c["hit"], BLUE, "0", note="Outcome of the kinematic simulation (ub_sim.simulate).") if i == 0 else put(cs, f"O{r}", c["hit"], BLUE, "0")
+    put(cs, f"P{r}", round(c["dv"], 2), BLUE, "0.0")
+    put(cs, f"Q{r}", f"=IF(O{r}=1,1/(1+EXP(-(P{r}-Inputs!$B$12)/Inputs!$B$13)),0)", BLACK, "0.0000")
+    put(cs, f"R{r}", f"=N{r}*O{r}", BLACK, "0.0000")
+    put(cs, f"S{r}", f"=N{r}*Q{r}", BLACK, "0.000000")
+    put(cs, f"T{r}", f"=N{r}^2", BLACK, "0.0000")
+cs.freeze_panes = "F6"
+put(cs, f"A{CL+2}", "Totals", BOLD); put(cs, f"N{CL+2}", f"=SUM(N6:N{CL})", BLACK, "0.0"); put(cs, f"O{CL+2}", f"=SUM(O6:O{CL})", BLACK, "0")
+put(cs, f"A{CL+3}", "Check: mean weight should be ≈ 1 (E_q[w] = 1). Strong deviations mean the proposal misses part of f's support.", GREY)
+put(cs, f"N{CL+3}", f"=AVERAGE(N6:N{CL})", BLACK, "0.000")
+
+# =============== Gaussian Copula ===============
+gc = wb.create_sheet("Gaussian Copula")
+title(gc, "Gaussian copula — how the scenario parameters are coupled", "Explanation, live correlation matrix and Cholesky factor, a live 200-sample demo, and the effect on P(collision | HB).")
+gc.column_dimensions["A"].width = 28
+for col in "BCDEFGHIJKLMNOPQ":
+    gc.column_dimensions[col].width = 12
+expl = [
+    ("What it is", "A copula is a joint distribution on [0,1]^d with uniform marginals. Sklar's theorem: any joint CDF can be written F(x₁…x_d) = C(F₁(x₁),…,F_d(x_d)). The Gaussian copula is C_R(u) = Φ_R(Φ⁻¹(u₁),…,Φ⁻¹(u_d)), with Φ_R the multivariate normal CDF with correlation matrix R."),
+    ("Why for scenarios", "Each scenario parameter has its own natural marginal (uniform speed within a band, lognormal reaction time, uniform deceleration…), but parameters are not independent. The copula separates the two questions: which values does each parameter take (marginals) and how do they move together (R)."),
+    ("Sampling (3 steps)", "1) ε ~ N(0, I), Z = L·ε with R = L·Lᵀ (Cholesky).  2) U_i = Φ(Z_i) — now uniform on [0,1] but correlated.  3) X_i = F_i⁻¹(U_i) — apply each marginal's inverse CDF. Live demo below (rows 66+)."),
+    ("Density (needed for IS weights)", "c_R(u) = |R|^(−½) · exp(−½ zᵀ(R⁻¹ − I)z), z = Φ⁻¹(u). Joint density f(x) = c_R(F(x)) · Π f_i(x_i). The concrete-scenario weights w = f(θ)/q(θ) use this formula for both f and the proposal q."),
+    ("Fitting R from data", "Transform each parameter to pseudo-observations u = rank/(n+1), then z = Φ⁻¹(u); R = correlation matrix of z (normal scores). Alternative per pair: estimate Kendall's τ and use ρ = sin(πτ/2) (row 33). Rank-based fits are invariant to the marginals."),
+    ("Validity check", "R must be symmetric positive definite: det(R) > 0 and the Cholesky factor exists (all diagonal entries of L real and > 0). Pairwise-estimated correlations can violate this — then project to the nearest correlation matrix."),
+    ("Main limitation", "Zero tail dependence: joint extremes (very late reaction AND very weak braking) become asymptotically independent. If real data show joint extremes more often, the Gaussian copula under-estimates exactly the critical corner. Check with tail-dependence plots; use a t-copula (symmetric tail dependence) or vine copulas (flexible pairwise structure in high dimension)."),
+    ("In this example", "R below is ILLUSTRATIVE, not measured. It couples ego speed, follower time headway, follower reaction time and follower deceleration; phantom-brake decel/duration and follower speed offset are independent. The Python simulation used the R values at build time; editing R here drives only the live demo and its correlation check."),
+]
+for i, (k, v) in enumerate(expl):
+    r = 4 + i
+    put(gc, f"A{r}", k, BOLD); put(gc, f"B{r}", v, wrap=True)
+    gc.merge_cells(f"B{r}:Q{r}"); gc.row_dimensions[r].height = 48
+
+put(gc, "A19", "Correlation matrix R (edit the yellow upper triangle)", BOLD)
+names = ["v_e", "h", "T_r", "a_f"]
+for j, n in enumerate(names):
+    put(gc, f"{chr(66+j)}20", n, BOLD); put(gc, f"A{21+j}", f"{n} — {ub_sim.COPULA_VARS[j]}", BOLD)
+for i in range(4):
+    for j in range(4):
+        ref = f"{chr(66+j)}{21+i}"
+        if i == j:
+            put(gc, ref, 1, BLACK, "0.00")
+        elif j > i:
+            put(gc, ref, float(ub_sim.R[i, j]), BLUE, "0.00", YEL)
+        else:
+            put(gc, ref, f"={chr(66+i)}{21+j}", BLACK, "0.00")
+put(gc, "G21", "det(R)", BOLD); put(gc, "H21", "=MDETERM(B21:E24)", BLACK, "0.0000")
+put(gc, "G22", "Valid?", BOLD); put(gc, "H22", '=IF(AND(H21>0,ISNUMBER(E30)),"positive definite","NOT positive definite")')
+
+put(gc, "A26", "Cholesky factor L (R = L·Lᵀ), formulas", BOLD)
+for j, n in enumerate(names):
+    put(gc, f"{chr(66+j)}26", n, BOLD)
+Lf = {
+    (0, 0): "=SQRT(B21)", (0, 1): "=0", (0, 2): "=0", (0, 3): "=0",
+    (1, 0): "=B22/B27", (1, 1): "=SQRT(C22-B28^2)", (1, 2): "=0", (1, 3): "=0",
+    (2, 0): "=B23/B27", (2, 1): "=(C23-B29*B28)/C28", (2, 2): "=SQRT(D23-B29^2-C29^2)", (2, 3): "=0",
+    (3, 0): "=B24/B27", (3, 1): "=(C24-B30*B28)/C28", (3, 2): "=(D24-B30*B29-C30*C29)/D29", (3, 3): "=SQRT(E24-B30^2-C30^2-D30^2)",
+}
+for (i, j), f in Lf.items():
+    put(gc, f"{chr(66+j)}{27+i}", f, BLACK, "0.0000")
+    if j == 0:
+        put(gc, f"A{27+i}", names[i], BOLD)
+
+put(gc, "A32", "Kendall τ → Gaussian-copula ρ", BOLD)
+put(gc, "A33", "Kendall τ (example)"); put(gc, "B33", -0.20, BLUE, "0.00", YEL)
+put(gc, "C33", "ρ = sin(π·τ/2) ="); put(gc, "E33", "=SIN(PI()*B33/2)", BLACK, "0.000")
+
+put(gc, "A35", "Effect of the copula on P(collision | HB) — 20,000 runs each (ub_sim.copula_effect)", BOLD)
+for j, hname in enumerate(["Speed band", "Follower headway", "P(coll|HB), Gaussian copula", "P(coll|HB), independent", "Ratio copula / independent", "Runs each"]):
+    c = gc.cell(row=36, column=1 + j, value=hname); c.font = HEAD; c.fill = HEADFILL; c.alignment = Alignment(wrap_text=True)
+gc.row_dimensions[36].height = 32
+for i, e in enumerate(cop_eff):
+    r = 37 + i
+    put(gc, f"A{r}", e["speed"]); put(gc, f"B{r}", e["headway"])
+    put(gc, f"C{r}", e["p_cop"], BLUE, "0.0000"); put(gc, f"D{r}", e["p_ind"], BLUE, "0.0000")
+    put(gc, f"E{r}", f"=IF(D{r}>0,C{r}/D{r},\"–\")", BLACK, "0.00"); put(gc, f"F{r}", e["n"], BLUE, INT)
+put(gc, "A58", "Reading: with these signs, close followers react faster (h–T_r < 0) but slow reactors also brake weakly (T_r–a_f < 0). Ignoring dependence changes P(collision) by the factor in column E — an error that goes straight into the risk sum.", GREY)
+
+put(gc, "A60", "Live sampling demo — logical scenario parameters (edit yellow)", BOLD)
+demo_in = [("Speed band low [km/h]", 35), ("Speed band high [km/h]", 55), ("Headway class low [s]", 1.0), ("Headway class high [s]", 1.5),
+           ("T_r log-median [s]", 1.1), ("T_r log-sd", 0.30), ("a_f low [m/s²]", 3.5), ("a_f high [m/s²]", 8.0)]
+for i, (k, v) in enumerate(demo_in):
+    col = chr(66 + 2 * (i % 4)); row = 61 + i // 4
+    put(gc, f"{col}{row}", k); put(gc, f"{chr(ord(col)+1)}{row}", v, BLUE, "0.00", YEL)
+# B61/C61 v_lo, D61/E61 v_hi, F61/G61 h_lo, H61/I61 h_hi ; B62/C62 trmed, D62/E62 trsd, F62/G62 af_lo, H62/I62 af_hi
+demo_hdr = ["#", "ε₁", "ε₂", "ε₃", "ε₄", "Z₁ (v_e)", "Z₂ (h)", "Z₃ (T_r)", "Z₄ (a_f)", "U₁", "U₂", "U₃", "U₄",
+            "v_e [km/h]", "h [s]", "T_r [s]", "a_f [m/s²]"]
+for j, hname in enumerate(demo_hdr):
+    c = gc.cell(row=65, column=1 + j, value=hname); c.font = HEAD; c.fill = HEADFILL
+eps = ub_sim.demo_normals()
+for i in range(len(eps)):
+    r = 66 + i
+    put(gc, f"A{r}", i + 1)
+    for j in range(4):
+        put(gc, f"{chr(66+j)}{r}", round(float(eps[i, j]), 5), BLUE, "0.000")
+    for j in range(4):
+        put(gc, f"{chr(70+j)}{r}", f"=SUMPRODUCT($B${27+j}:$E${27+j},B{r}:E{r})", BLACK, "0.000")
+        put(gc, f"{chr(74+j)}{r}", f"=NORMSDIST({chr(70+j)}{r})", BLACK, "0.000")
+    put(gc, f"N{r}", f"=$C$61+J{r}*($E$61-$C$61)", BLACK, "0.0")
+    put(gc, f"O{r}", f"=$G$61+K{r}*($I$61-$G$61)", BLACK, "0.00")
+    put(gc, f"P{r}", f"=LOGINV(L{r},LN($C$62),$E$62)", BLACK, "0.00")
+    put(gc, f"Q{r}", f"=$G$62+M{r}*($I$62-$G$62)", BLACK, "0.00")
+DL = 65 + len(eps)
+put(gc, "A63", "Sample correlation check (200 draws): target ρ vs. sample correlation of Z", BOLD)
+pairs = [(0, 1), (1, 2), (2, 3), (0, 2), (0, 3), (1, 3)]
+for k, (a, b) in enumerate(pairs):
+    col = chr(66 + 2 * k)
+    put(gc, f"{col}64", f"{names[a]}–{names[b]}: target", GREY)
+    put(gc, f"{chr(ord(col)+1)}64", f"={chr(66+b)}{21+a}", BLACK, "0.00")
+put(gc, f"A{DL+2}", "Sample correlation", BOLD)
+for k, (a, b) in enumerate(pairs):
+    col = chr(66 + 2 * k)
+    put(gc, f"{col}{DL+2}", f"{names[a]}–{names[b]}", GREY)
+    put(gc, f"{chr(ord(col)+1)}{DL+2}", f"=CORREL({chr(70+a)}66:{chr(70+a)}{DL},{chr(70+b)}66:{chr(70+b)}{DL})", BLACK, "0.00")
+put(gc, f"A{DL+3}", "Rank (Spearman) correlation of the final parameters equals that of U; Pearson correlation of X can differ because the marginals are nonlinear.", GREY)
 
 # =============== Validation Targets ===============
 vt = wb.create_sheet("Validation Targets")
@@ -261,5 +416,7 @@ caveats = [
 for i, t in enumerate(caveats):
     put(vt, f"A{30+i}", f"{i+1}. {t}")
 
+order = ["Overview", "Inputs", "HB Evidence", "Scenarios", "Concrete Scenarios", "Gaussian Copula", "Summary", "Validation Targets"]
+wb._sheets = [wb[n] for n in order]
 wb.save(OUT)
 print("saved", OUT, "bayes", bayes_q95, bayes_mean)
