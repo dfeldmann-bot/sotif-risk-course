@@ -1,5 +1,7 @@
 # Scenario-based residual risk under SOTIF
 
+> Rendered version with typeset formulas and plots: [`01-scenario-based-risk.html`](01-scenario-based-risk.html) (clone and open in a browser, or view in the published course).
+
 How to turn the evaluation of many scenarios (critical and non-critical) into a residual-risk number, and how that number relates to validation targets.
 
 Worked example: [`tools/unintended_braking_risk_example.xlsx`](../tools/unintended_braking_risk_example.xlsx) (built by `tools/build_ub_example.py`, synthetic data).

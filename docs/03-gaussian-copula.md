@@ -1,5 +1,7 @@
 # Gaussian copula for scenario parameters
 
+> Rendered version with typeset formulas and plots: [`03-gaussian-copula.html`](03-gaussian-copula.html) (clone and open in a browser, or view in the published course).
+
 Live version, with editable correlation matrix, Cholesky factor in formulas and a sampling demo: sheet *Gaussian Copula* in [`tools/unintended_braking_risk_example.xlsx`](../tools/unintended_braking_risk_example.xlsx). Code: `sample_theta()` and `log_density()` in [`tools/ub_sim.py`](../tools/ub_sim.py).
 
 ## What it is

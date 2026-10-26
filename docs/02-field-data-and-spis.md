@@ -1,5 +1,7 @@
 # Field data, statistics and safety performance indicators (SPIs)
 
+> Rendered version with typeset formulas and plots: [`02-field-data-and-spis.html`](02-field-data-and-spis.html) (clone and open in a browser, or view in the published course).
+
 What to record during field testing and operation, what to compute from it, and how to turn it into leading and lagging SPIs. The examples use the unintended-braking target from [`tools/unintended_braking_risk_example.xlsx`](../tools/unintended_braking_risk_example.xlsx).
 
 ## 1. Data to collect, organised by the risk equation

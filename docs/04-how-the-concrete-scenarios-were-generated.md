@@ -1,5 +1,7 @@
 # How the 1,000 concrete scenarios were generated
 
+> Rendered version with typeset formulas and plots: [`04-how-the-concrete-scenarios-were-generated.html`](04-how-the-concrete-scenarios-were-generated.html) (clone and open in a browser, or view in the published course).
+
 This documents exactly what [`tools/ub_sim.py`](../tools/ub_sim.py) does to produce the sheet *Concrete Scenarios* in [`tools/unintended_braking_risk_example.xlsx`](../tools/unintended_braking_risk_example.xlsx).
 
 **Everything is made up.** No field data, no real system, no real simulator. The distributions and correlations are illustrative choices. The method is meant to be reused; the numbers are not.
