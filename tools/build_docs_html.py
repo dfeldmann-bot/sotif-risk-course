@@ -543,6 +543,12 @@ READING = """
 <li>Koopman. <i>SPI vs KPI</i>, CMU lecture notes. <a href="https://users.ece.cmu.edu/~koopman/lectures/L124_SPI_vs_KPI.pdf">PDF</a>.</li>
 <li>Schaller et al. (2026). Addressing SOTIF with a runtime monitor ensemble for AI-based perception systems. <i>Discover AI</i> 6:1172. <a href="https://doi.org/10.1007/s44163-026-02186-z">doi</a>.</li>
 <li>Reich (2026). <i>SINADRA: Situation-Aware Dynamic Risk Assessment for Safe and Permissive Autonomous Systems</i>. Dr.-Ing. thesis, RPTU Kaiserslautern-Landau.</li>
+<li>Glasmacher, Weber, Eckstein (2024). Towards a Completeness Argumentation for Scenario Concepts. <a href="https://arxiv.org/abs/2404.01934">arXiv:2404.01934</a>.</li>
+<li><i>Coverage Metrics for a Scenario Database for the Scenario-Based Assessment of Automated Driving Systems</i> (2024). <a href="https://arxiv.org/abs/2409.01139">arXiv:2409.01139</a>.</li>
+<li>Guo, Muñoz Sánchez, de Gelder, van der Sande (2023). Scenario Extraction from a Large Real-World Dataset for the Assessment of Automated Vehicles. <a href="https://arxiv.org/abs/2306.07815">arXiv:2306.07815</a>.</li>
+<li>Hauer, Schmidt, Holzmüller, Pretschner (2019). Did We Test All Scenarios for Automated and Autonomous Driving Systems? IEEE ITSC.</li>
+<li>ASAM OpenLABEL 1.0.0 (2021). <a href="https://www.asam.net/standards/detail/openlabel/">asam.net</a>. ISO 34503:2023, <i>Specification for operational design domain</i>.</li>
+<li>UNECE (2021). New Assessment/Test Method for Automated Driving (NATM), ECE/TRANS/WP.29/2021/61; Commission Implementing Regulation (EU) 2022/1426.</li>
 <li>Au, Beck (2001). Estimation of small failure probabilities in high dimensions by subset simulation. <i>Probabilistic Engineering Mechanics</i> 16(4).</li>
 </ul>
 <h3>Statistics books for deeper understanding</h3>
@@ -657,6 +663,190 @@ def outlook_body(fess):
 </ol>
 """
 
+
+# =====================================================================================
+# Doc 07 — scenario database, ODD coverage, completeness
+# =====================================================================================
+def sfig_granularity():
+    rng = np.random.default_rng(41); s = (35, 55); n = 120000
+    th = ub_sim.sample_theta(s, (0.5, 3.5), n, rng, corr=False)
+    hit, _ = ub_sim.simulate(th)
+    edges = np.arange(0.5, 3.55, 0.1); idx = np.digitize(th["h"], edges) - 1
+    p = np.array([hit[idx == i].mean() for i in range(len(edges) - 1)]); mid = (edges[:-1] + edges[1:]) / 2
+    fig, ax = plt.subplots(figsize=(7.2, 3.8))
+    ax.plot(mid, p, color=S1, marker="o", ms=3.5, label="fine bins (0.1 s)")
+    classes = [(0.5, 1.0), (1.0, 1.5), (1.5, 2.0), (2.0, 3.0), (3.0, 3.5)]
+    for lo, hi in classes:
+        m = (th["h"] >= lo) & (th["h"] < hi); pc = hit[m].mean()
+        ax.plot([lo, hi], [pc, pc], color=S2, lw=2.5)
+        ax.axvline(lo, color=GRID, lw=1, zorder=0)
+        rng_in = p[(mid >= lo) & (mid < hi)]
+        if len(rng_in) and rng_in.max() > 0.01:
+            ax.annotate(f"range {rng_in.min():.2f}–{rng_in.max():.2f}", ((lo + hi) / 2, rng_in.max()), (0, 8), textcoords="offset points", ha="center", fontsize=8.5)
+    ax.plot([], [], color=S2, lw=2.5, label="current class averages")
+    ax.set_xlabel("Follower time headway h [s]"); ax.set_ylabel("P(collision | HB)")
+    ax.set_title("Granularity: within-class variation is largest at short headway (35–55 km/h)")
+    ax.legend(fontsize=9)
+    return svg(fig)
+
+
+def sfig_tagger():
+    rng = np.random.default_rng(42)
+    true_lat = rng.lognormal(np.log(0.55), 0.45, 1500)                  # peak lateral speed of real cut-ins [m/s]
+    wobble = np.abs(rng.normal(0, 0.18, 8000))                          # lane-keeping wobble / tracking noise of non-cut-ins
+    meas_t, meas_f = true_lat + rng.normal(0, 0.08, true_lat.size), wobble + rng.normal(0, 0.08, wobble.size)
+    th = np.linspace(0.05, 1.0, 200)
+    rec = np.array([(meas_t > t).mean() for t in th])
+    tp = np.array([(meas_t > t).sum() for t in th]); fp = np.array([(meas_f > t).sum() for t in th])
+    prec = tp / np.maximum(tp + fp, 1)
+    fig, ax = plt.subplots(figsize=(7.2, 3.6))
+    ax.plot(th, rec, color=S1, label="recall (share of real cut-ins found)")
+    ax.plot(th, prec, color=S2, label="precision (share of detections that are real)")
+    t0 = 0.35; r0 = (meas_t > t0).mean(); p0 = (meas_t > t0).sum() / ((meas_t > t0).sum() + (meas_f > t0).sum())
+    ax.axvline(t0, color=INK2, lw=1, ls=":"); ax.text(t0 + 0.01, 0.12, f"threshold 0.35 m/s:\nrecall {r0:.2f}, precision {p0:.2f}", fontsize=9)
+    ax.set_ylim(0, 1.03); ax.set_xlabel("Tagger threshold on peak lateral speed [m/s]"); ax.set_ylabel("rate")
+    ax.set_title("A scenario tagger is a classifier: its errors bias exposure")
+    ax.legend(fontsize=9, loc="center right")
+    return svg(fig), r0, p0
+
+
+def sfig_pair_coverage():
+    rng = np.random.default_rng(43)
+    weather = ["dry", "light rain", "heavy rain", "fog", "snow", "low sun"]
+    road = ["residential", "urban arterial", "intersection", "roundabout", "bus lane", "construction zone", "tunnel"]
+    pw = np.array([0.62, 0.17, 0.06, 0.03, 0.02, 0.10]); pr = np.array([0.30, 0.30, 0.20, 0.06, 0.05, 0.04, 0.05])
+    hours = rng.poisson(np.outer(pw, pr) * 3000)                        # synthetic: 3,000 h of tagged exposure
+    n = 30
+    fig, ax = plt.subplots(figsize=(7.6, 3.6))
+    im = ax.imshow(np.minimum(hours, n) / n, cmap="Blues", vmin=0, vmax=1, aspect="auto")
+    for i in range(len(weather)):
+        for j in range(len(road)):
+            ax.text(j, i, f"{hours[i, j]}", ha="center", va="center", fontsize=9, color="white" if hours[i, j] >= n * 0.7 else INK)
+    ax.set_xticks(range(len(road)), road, rotation=25, ha="right", fontsize=8.5); ax.set_yticks(range(len(weather)), weather)
+    ax.grid(False)
+    cov = (np.minimum(hours, n).sum()) / (n * hours.size)
+    ax.set_title(f"Pairwise ODD-tag coverage: hours per cell, saturating at n = {n} (CoverageTag = {cov:.2f})")
+    fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02, label="min(hours, n) / n").outline.set_visible(False)
+    return svg(fig), cov, int((hours < n).sum()), hours.size
+
+
+def sfig_saturation():
+    rng = np.random.default_rng(44); S_true = 300
+    probs = 1 / np.arange(1, S_true + 1) ** 1.3; probs /= probs.sum()
+    N = 200_000; draws = rng.choice(S_true, size=N, p=probs)
+    checkpoints = np.unique(np.logspace(2, np.log10(N), 40).astype(int))
+    Sobs, chao, gt, true_miss = [], [], [], []
+    for c in checkpoints:
+        cnt = np.bincount(draws[:c], minlength=S_true); f1 = (cnt == 1).sum(); f2 = (cnt == 2).sum()
+        Sobs.append((cnt > 0).sum()); chao.append((cnt > 0).sum() + (f1 * (f1 - 1) / (2 * (f2 + 1))))
+        gt.append(f1 / c); true_miss.append(probs[cnt == 0].sum())
+    fig, axs = plt.subplots(1, 2, figsize=(9.6, 3.5))
+    axs[0].plot(checkpoints, Sobs, color=S1, label="scenario types observed")
+    axs[0].plot(checkpoints, chao, color=S2, ls="--", label="Chao1 estimate of total")
+    axs[0].axhline(S_true, color=INK2, lw=1, ls=":"); axs[0].text(120, S_true * 1.03, f"true number of types: {S_true} (synthetic)", fontsize=8.5)
+    axs[0].set_xscale("log"); axs[0].set_xlabel("scenario occurrences recorded"); axs[0].set_ylabel("types"); axs[0].set_title("Discovery curve")
+    axs[0].legend(fontsize=8.5, loc="lower right")
+    axs[1].plot(checkpoints, gt, color=S2, label="Good–Turing estimate f₁/N")
+    axs[1].plot(checkpoints, true_miss, color=INK2, ls=":", label="true missing mass (synthetic)")
+    axs[1].set_xscale("log"); axs[1].set_yscale("log"); axs[1].set_xlabel("scenario occurrences recorded")
+    axs[1].set_ylabel("P(next occurrence is a new type)"); axs[1].set_title("Missing probability mass")
+    axs[1].legend(fontsize=8.5)
+    fig.tight_layout()
+    return svg(fig), Sobs[-1], chao[-1], gt[-1], true_miss[-1]
+
+
+def scenario_db_body(fg, ft, fp, fs):
+    gran, (tag_svg, r0, p0), (pair_svg, cov, n_under, n_cells), (sat_svg, sobs, chao, gtm, tmiss) = fg, ft, fp, fs
+    return f"""
+<p>How to validate an L4 system for SOTIF at vehicle level, what a scenario database contributes, how recordings feed it, how scenarios are identified automatically, how fine the ODD tags must be, and how to argue completeness. Plots use synthetic data.</p>
+
+<h2>1 · The vehicle-level SOTIF strategy for L4</h2>
+<p>ISO 21448 divides scenarios into known safe, known unsafe, unknown unsafe and unknown safe areas. Validation shows that the known-unsafe and unknown-unsafe areas carry acceptable residual risk. For L4, complement it with ISO/TS 5083 (positive risk balance), UL 4600 (SPIs, safety case) and, for EU type approval, the UNECE NATM pillars (audit, simulation, track, real world, in-service monitoring; ECE/TRANS/WP.29/2021/61, Regulation (EU) 2022/1426).</p>
+<div class="tbl-wrap"><table class="doc"><thead><tr><th>Pillar</th><th>SOTIF</th><th>What it shows</th><th>Feeds</th></tr></thead><tbody>
+<tr><td>ODD spec, HARA, triggering-condition analysis</td><td>Cl. 5–7</td><td>what can go wrong, where</td><td>\\(A_s\\), HB/HE list, taxonomy</td></tr>
+<tr><td>Component V&amp;V (perception KPIs per ODD stratum, planner checks)</td><td>Cl. 10</td><td>component insufficiencies</td><td>perception error models</td></tr>
+<tr><td><b>Scenario-based simulation</b> from the database (falsification + IS estimation)</td><td>Cl. 10</td><td>risk in known scenarios</td><td>\\(p_\\ell\\), coverage</td></tr>
+<tr><td>Log replay / XiL</td><td>Cl. 10</td><td>real inputs, current software</td><td>\\(\\lambda\\) per context</td></tr>
+<tr><td>Proving ground</td><td>Cl. 10</td><td>sim anchoring at extremes</td><td>sim-to-real bounds</td></tr>
+<tr><td><b>Public-road exploration and FOT</b></td><td>Cl. 11</td><td>unknown triggers, exposure</td><td>\\(\\nu,\\ f(\\theta),\\ R_{{\\text{{unknown}}}}\\)</td></tr>
+<tr><td>Shadow mode / operation</td><td>Cl. 13</td><td>assumptions still hold</td><td>SPIs</td></tr>
+<tr><td>Release argument</td><td>Cl. 12</td><td>claim per harm</td><td>\\(\\sum_\\ell \\nu_\\ell^U p_\\ell^U + R_{{\\text{{unknown}}}}^U \\le A_s\\)</td></tr>
+</tbody></table></div>
+
+<h2>2 · What the scenario database contributes</h2>
+<ol class="tight">
+<li><b>Makes “known” explicit.</b> The taxonomy is the boundary between known and unknown, and logical scenarios must partition the ODD.</li>
+<li><b>Holds the weights:</b> \\(\\nu_\\ell\\) and \\(f_\\ell(\\theta)\\) from recordings.</li>
+<li><b>Generates tests</b> (logical → concrete, e.g. OpenSCENARIO) with traceability triggering condition → HB → HE → requirement → test.</li>
+<li><b>Shows coverage:</b> which cells (scenario × triggering condition × software version) have evidence.</li>
+<li><b>Stores every run</b> with \\(\\theta\\), \\(q(\\theta)\\), software hash and outcome, so the risk can be recomputed after each change.</li>
+<li><b>Moves unknown to known</b>: newly discovered types become categories, and their arrival rate is a Clause 11 SPI.</li>
+</ol>
+<pre class="flow">Recording(id, vehicle, sw_hash, map_ver, calib_state, route, hours, raw_uri)
+ExposureSlice(recording_id, t0, t1, odd_tags…)              -- denominators, incl. “nothing happened”
+ScenarioCategory(id, version, tag_rule, param_schema, partition_key)
+Occurrence(id, recording_id, t0, t1, category_id, θ…, odd_tags, min_ttc, hb_flag, monitor_flags)
+HazardLink(category_id, hb_id, he_id, triggering_condition_id)
+TestRun(id, category_id, θ…, q_density, platform, sw_hash, outcome, Δv)</pre>
+
+<h2>3 · From recordings to the database</h2>
+<pre class="flow">raw logs ─► reference world model ─► context enrichment ─► tagging ─► scenario extraction ─► DB
+(sensors,    (offline perception     (map matching,        (actor      (tag combinations      (Occurrence +
+ bus, system  + labels; NOT the       weather, light,       activities, → category; θ at        ExposureSlice,
+ internals)   online stack)           ODD tags per t)       relations)   anchor events)         log pointer)</pre>
+<ul>
+<li><b>Extract scenarios with a reference world model.</b> If the stack under test decides which scenarios exist, it cannot miss its own failures.</li>
+<li><b>Tag every driven second</b>, even when no scenario happens. Otherwise \\(\\nu\\) has no denominator.</li>
+<li><b>Provenance</b> (software hash, map, calibration) and a pointer back to the raw log window on every occurrence.</li>
+<li><b>Version the taxonomy</b> and re-tag historical data when it changes.</li>
+</ul>
+
+<h2>4 · Identifying scenarios automatically</h2>
+<p><b>Known types: tag-based extraction.</b> Tag each actor's activities (braking, lane change, turning) and relations (lead vehicle, cut-in, crossing). A category is a tag combination, and \\(\\theta\\) is read at an anchor event, e.g. lane crossing for a cut-in (Guo, Muñoz Sánchez, de Gelder, van der Sande 2023, on the Waymo Open Motion Dataset). The tagger is a classifier, so validate it against a human-labelled sample and correct the exposure:</p>
+<div class="math">\\[ \\hat\\nu_\\ell = \\frac{{n_{{\\text{{detected}}}}\\cdot \\text{{precision}}}}{{\\text{{recall}}\\cdot T}} \\]</div>
+{figure(tag_svg, f"Synthetic cut-in tagger thresholding the peak lateral speed. At 0.35 m/s it finds {r0:.0%} of real cut-ins, and {p0:.0%} of its detections are real. Uncorrected, exposure would be biased by the factor precision/recall. Measure both per ODD stratum, because rain and night change them.", 1)}
+<p><b>New types: Clause 11 discovery.</b> (1) A queue of <i>unexplained critical events</i> (low TTC, hard braking, HB flags, monitor flags, disengagements, remote assistance) that match no category goes to human review. (2) Unsupervised clustering of time-window embeddings, with outliers far from all known clusters flagged. (3) ODD novelty: conditions outside the spec, or rare tag combinations.</p>
+
+<h2>5 · ODD tags: coverage and granularity</h2>
+<p>ISO 34503 gives the ODD taxonomy (scenery, environmental conditions, dynamic elements). ISO 34504 gives scenario-categorisation tags. Both are a <b>shared vocabulary, not a sufficient resolution</b>: ISO 34504 offers examples rather than prescribed values, and does not fix thresholds such as what “moving faster” means. Two things must be added for your function.</p>
+<h3>Missing tags</h3>
+<p>Risk-relevant attributes for <i>your</i> triggering conditions are often not standard tags: overhead structures, road spray and low-sun angle for phantom braking, for example. Derive extra tags from the Clause 7 triggering-condition analysis, from SINADRA-style structured environment models (guide phrases over an environment ontology identify the factors that change a hazardous situation's risk; Reich 2026), and from unexplained field events. Map each custom tag to a parent in ISO 34503/34504 so the vocabulary stays exchangeable.</p>
+<h3>Granularity: how fine is fine enough?</h3>
+<p>A class may lump values together as long as a shift of the distribution <i>within</i> the class cannot move the risk materially. With conditional harm \\(p(\\theta)\\), class exposure \\(\\nu_c\\), and test vs. deployment distributions inside the class:</p>
+<div class="math">\\[ \\big|\\Delta R_c\\big| = \\nu_c\\left|\\int_c p(\\theta)\\,\\big(f^{{\\text{{dep}}}}_c - f^{{\\text{{test}}}}_c\\big)\\,d\\theta\\right| \;\\le\; \\nu_c\\,\\big(p^{{\\max}}_c - p^{{\\min}}_c\\big)\\,\\mathrm{{TV}}\\big(f^{{\\text{{dep}}}}_c, f^{{\\text{{test}}}}_c\\big) \\]</div>
+<p>Refine a class until \\(\\sum_c \\nu_c\\,(p^{{\\max}}_c-p^{{\\min}}_c)\\,\\mathrm{{TV}}^{{\\max}}_c \\le \\delta\\), a reserved share of the budget. The rule refines where harm varies steeply <i>and</i> exposure is high. Boundaries must also be measurable in logs and at runtime, otherwise the class cannot be tagged or monitored.</p>
+{figure(gran, "P(collision | HB) on a fine 0.1 s grid against the current headway classes. In the shortest class the collision probability varies several-fold, so a shift towards 0.5–0.7 s inside it would go unnoticed at class level. That is the class to split. The 2–3 s class is flat and can stay coarse.", 2)}
+<h3>Combinatorial coverage</h3>
+<p>Coverage of single tags is not enough; triggering conditions are often <i>combinations</i>. Count evidence per tag pair (or t-wise) and saturate at a minimum \\(n\\) (tag-based coverage, <i>Coverage Metrics for a Scenario Database…</i>, arXiv:2409.01139):</p>
+<div class="math">\\[ \\text{{Coverage}}_{{\\text{{tag}}}}(n) = \\frac{{1}}{{n\\,|L|\\,|C|}}\\sum_{{L}}\\sum_{{C}} \\min\\big(n, N(L,C)\\big) \\]</div>
+{figure(pair_svg, f"Synthetic exposure hours per weather × road-type pair. {n_under} of {n_cells} pairs have fewer than 30 h. Single-tag coverage looks fine, but heavy rain at roundabouts or fog in tunnels is barely tested. Use this to plan routes and the simulation focus.", 3)}
+
+<h2>6 · Arguing completeness</h2>
+<p>Completeness of a scenario concept cannot be proven; it is <i>argued</i>, typically in GSN, by refuting counter-hypotheses with evidence (Glasmacher, Weber, Eckstein 2024). Completeness is binary and applies to the concept; coverage is quantitative and applies to parameter spaces and value assignments. As they put it, <i>“unforeseen scenarios cannot be identified with argumentation, but with external input”</i>. Use five legs:</p>
+<ol class="tight">
+<li><b>By construction:</b> taxonomy derived systematically (ISO 34503 attributes × guidewords, SEM, triggering-condition analysis), reviewed by independent experts; atomicity of base scenarios.</li>
+<li><b>Explained time (Type II coverage):</b> the share of driven time assigned to some category. Glasmacher et al. report no unassigned seconds at base-scenario level on inD. Every unassigned second is a candidate unknown.</li>
+<li><b>Saturation:</b> the discovery curve flattens, and the estimated missing mass is small.</li>
+<li><b>Risk-weighted remainder:</b> what matters is not the number of missing types but their risk. Bound it with the Clause 11 field evidence (lesson 1) inside the reserve \\(\\varepsilon A_H\\).</li>
+<li><b>Kept open in operation</b> (Cl. 13): discovery rate, unexplained-event rate and tagger recall as SPIs, since completeness claims expire.</li>
+</ol>
+<div class="math">\\[ \\hat M_0 = \\frac{{f_1}}{{N}}\\ \\ (\\text{{Good–Turing}}), \\qquad \\hat S = S_{{\\text{{obs}}}} + \\frac{{f_1(f_1-1)}}{{2(f_2+1)}}\\ \\ (\\text{{Chao1}}), \\qquad R_{{\\text{{unknown}}}} \\lesssim \\hat M_0\\,\\nu_{{\\text{{tot}}}}\\,\\bar p_{{\\text{{unk}}}} \\]</div>
+<p>\\(f_1, f_2\\): number of types seen exactly once or twice; \\(N\\): occurrences; \\(\\nu_{{\\text{{tot}}}}\\): total scenario occurrence rate; \\(\\bar p_{{\\text{{unk}}}}\\): harm per unknown occurrence, bounded conservatively or by field driving. Hauer et al. (2019) frame the same question as “did we test all scenario types?”.</p>
+{figure(sat_svg, f"Synthetic: 300 scenario types with a long-tailed (Zipf) frequency distribution. After 200,000 occurrences, {sobs} types are seen and Chao1 estimates {chao:.0f}; the Good–Turing missing mass is {gtm:.1e} (true: {tmiss:.1e}). The rare tail is reached last, and rare is also where triggering conditions hide. That is why saturation is one leg, not the whole argument.", 4)}
+
+<h2>7 · OpenLABEL vs. ISO 34504 tags</h2>
+<div class="tbl-wrap"><table class="doc"><thead><tr><th></th><th>ASAM OpenLABEL (v1.0.0, 2021)</th><th>ISO 34504:2024</th></tr></thead><tbody>
+<tr><td><b>What it is</b></td><td>A <b>data format</b>: JSON schema for annotations</td><td>A <b>vocabulary and structure</b> for categorising scenarios</td></tr>
+<tr><td><b>Answers</b></td><td>How do I store and exchange labels on recordings?</td><td>What do I call a scenario and its attributes?</td></tr>
+<tr><td><b>Level</b></td><td>Frame and object level (boxes, segmentation, tracks) <i>and</i> scenario level</td><td>Scenario level only</td></tr>
+<tr><td><b>Content</b></td><td>Elements (objects, actions, events, contexts, relations) with frame intervals; relations as subject–predicate–object; streams; coordinate systems; links to external ontologies</td><td>Tags for scenery, environment, dynamic elements and behaviour, grouped into categories; examples, no exact values</td></tr>
+<tr><td><b>Semantics</b></td><td>Brings none of its own: each element points to an ontology entry you choose</td><td>Is a semantic source you can point to</td></tr>
+<tr><td><b>Role in the pipeline</b></td><td>The container that carries tags with time intervals on recordings and links scenario files</td><td>The agreed names inside that container</td></tr>
+</tbody></table></div>
+<p>They complement each other: ISO 34503/34504 (plus your custom tags) form the ontology; OpenLABEL stores the per-recording, per-interval annotations that reference it; the scenario database indexes them; OpenSCENARIO describes executable tests. The OpenLABEL concept paper lists BSI PAS 1883 and ASAM OpenODD as related standards. The mapping to ISO 34504 is yours to define.</p>
+<p class="meta">Sources for this page: Glasmacher, Weber, Eckstein 2024 (arXiv:2404.01934); <i>Coverage Metrics for a Scenario Database for the Scenario-Based Assessment of ADS</i> (arXiv:2409.01139); Guo et al. 2023 (arXiv:2306.07815); ASAM OpenLABEL concept paper and standard page; TNO on ISO 34504 (2024); ISO 34503:2023; Reich 2026 (SINADRA).</p>
+"""
+
 # =====================================================================================
 # HTML
 # =====================================================================================
@@ -666,7 +856,8 @@ PAGES = [("01-scenario-based-risk.html", "Scenario-based residual risk"),
          ("03-gaussian-copula.html", "Gaussian copula"),
          ("04-how-the-concrete-scenarios-were-generated.html", "How the 1,000 scenarios were generated"),
          ("05-unintended-braking-report.html", "Unintended braking report"),
-         ("06-scaling-to-acc-and-robotaxi.html", "Scaling up: ACC and L4 robotaxi")]
+         ("06-scaling-to-acc-and-robotaxi.html", "Scaling up: ACC and L4 robotaxi"),
+         ("07-scenario-database-and-completeness.html", "Scenario database, ODD coverage and completeness")]
 EXTRA_CSS = """
 .page{max-width:1060px}.col{max-width:46rem}
 figure.plot{margin:1.6rem 0 2rem;background:#fcfcfb;border:1px solid var(--rule);border-radius:4px;padding:.8rem .8rem .6rem;color:#0b0b0b}
@@ -703,7 +894,7 @@ def page(fname, title, dek, body):
 <script>window.MathJax={{tex:{{inlineMath:[['\\\\(','\\\\)']],displayMath:[['\\\\[','\\\\]']]}},svg:{{fontCache:'global'}}}};</script>
 <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
 </head><body><main class="page"><div class="col">
-<nav class="crumbs" aria-label="Course"><a href="../index.html">SOTIF Risk Course</a><span>{"Report" if idx == 4 else ("Outlook" if idx == 5 else f"Background doc {idx+1} of 4")}</span></nav>
+<nav class="crumbs" aria-label="Course"><a href="../index.html">SOTIF Risk Course</a><span>{"Report" if idx == 4 else ("Outlook" if idx == 5 else f"Doc {idx+1} of {len(PAGES)}")}</span></nav>
 <h1>{title}</h1>
 <p class="dek">{dek}</p>
 <nav class="toc" aria-label="Docs">{toc}</nav>
@@ -736,6 +927,8 @@ def main():
               posterior=f4, ismc=ismc, weights=f14, cop=f12, targets=f5)
     b5 = report_body(fs, nz_is, nz_mc)
     b6 = outlook_body(ofig_ess())
+    print("doc 07…")
+    b7 = scenario_db_body(sfig_granularity(), sfig_tagger(), sfig_pair_coverage(), sfig_saturation())
 
     # ------------------------------------------------------------------ 01
     b1 = f"""
@@ -981,6 +1174,7 @@ def main():
         (b4, "The exact recipe behind the made-up concrete scenarios: distributions, copula sampling, kinematics, importance weights and checks."),
         (b5, "The 1,000-scenario workbook as a condensed visual report: exposure, evidence, outcomes, where the risk sits, and the verdict."),
         (b6, "What changes when the same method is applied to ACC and then to an L4 urban robotaxi, and a staged roadmap."),
+        (b7, "Vehicle-level SOTIF validation for L4, the scenario database and its data pipeline, automatic scenario identification, ODD-tag granularity and completeness arguments."),
     ]
     for (fname, title), (body, dek) in zip(PAGES, contents):
         with open(os.path.join(DOCS, fname), "w", encoding="utf-8") as fh:
