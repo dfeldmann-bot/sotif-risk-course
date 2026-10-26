@@ -16,6 +16,7 @@ A self-paced course on quantitative risk calculation and validation under ISO 21
 | `docs/01-scenario-based-risk.md` | From scenario evaluations to residual risk: estimator, importance weights, relation to validation targets, parameterisation, sources of each conditional probability |
 | `docs/02-field-data-and-spis.md` | What to collect in field testing, statistics to compute, leading/lagging SPIs with an example SPI register |
 | `docs/03-gaussian-copula.md` | Gaussian copula for scenario parameters: sampling, density for IS weights, fitting, limits |
+| `docs/04-how-the-concrete-scenarios-were-generated.md` | Exact method behind the 1,000 made-up concrete scenarios: distributions f and q, copula sampling, kinematic model, importance weights, checks |
 | `MISSION.md`, `RESOURCES.md`, `NOTES.md` | Learning goals, curated sources, teaching notes |
 
 ## Running the tools

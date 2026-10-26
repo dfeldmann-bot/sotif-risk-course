@@ -30,10 +30,10 @@ TRIGGERS = [  # name, operating-time share, TRUE HB rate per hour in context (sy
     ("Roadside clutter / debris", 0.03, 3e-4),
 ]
 SPEEDS = [  # name, share, speed range km/h, FP-rate multiplier
-    ("≤ 30 km/h", 0.35, (20, 35), 1.0),
-    ("31–50 km/h", 0.40, (35, 55), 1.0),
-    ("51–70 km/h", 0.15, (55, 75), 1.2),
-    ("71–90 km/h", 0.10, (75, 95), 1.5),
+    ("20–35 km/h", 0.35, (20, 35), 1.0),
+    ("35–55 km/h", 0.40, (35, 55), 1.0),
+    ("55–75 km/h", 0.15, (55, 75), 1.2),
+    ("75–95 km/h", 0.10, (75, 95), 1.5),
 ]
 HEADWAYS = [  # name, share, time-headway range of the following vehicle [s]
     ("No follower within 3 s", 0.45, (3.0, 6.0)),
