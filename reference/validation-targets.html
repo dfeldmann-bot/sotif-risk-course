@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Validation Targets Reference</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Sans+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page"><div class="col">
+<nav class="crumbs" aria-label="Course"><a href="../index.html">SOTIF Risk Course</a><span>Reference</span></nav>
+<h1>Validation targets</h1>
+<p class="dek">Acceptance criterion → tolerable behaviour rate → test exposure. Taught in <a href="../lessons/0001-acceptance-criterion-to-validation-target.html">Lesson 1</a>.</p>
+
+<h3>Decomposition (ISO 21448 Annex C.2, as read by Putze et al.)</h3>
+<div class="eq"><var>R</var><sub>HB</sub> = <var>A</var><sub>H</sub> / [ P(E | HB) · P(C̄ | E) · P(S | C̄) ]</div>
+<p class="meta">Correct conditioning: P(S | C̄, E, HB). Every factor is system-dependent (route, ODD, fallback) and needs its own justification.</p>
+
+<h3>Zero-failure test (Poisson)</h3>
+<div class="eq"><var>τ</var> = −ln(1 − <var>C</var>) / <var>R</var><sub>HB</sub> &nbsp;&nbsp;≈ 3 / <var>R</var><sub>HB</sub> at <var>C</var> = 0.95</div>
+
+<h3>Plan allowing <var>k</var> events</h3>
+<div class="eq"><var>τ</var><sub>k</sub> = ½ χ²<sub>2(k+1)</sub>(<var>C</var>) / <var>R</var><sub>HB</sub> &nbsp; ⇔ &nbsp; P(X ≤ <var>k</var> | <var>λ</var> = <var>R</var><sub>HB</sub><var>τ</var>) = 1 − <var>C</var></div>
+<div class="tbl-wrap"><table>
+<thead><tr><th><var>λ</var><sub>k</sub>(<var>C</var>)</th><th>k=0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead>
+<tbody>
+<tr><td>C = 0.90</td><td>2.303</td><td>3.890</td><td>5.322</td><td>6.681</td><td>7.994</td><td>9.275</td></tr>
+<tr><td>C = 0.95</td><td>2.996</td><td>4.744</td><td>6.296</td><td>7.754</td><td>9.154</td><td>10.513</td></tr>
+<tr><td>C = 0.99</td><td>4.605</td><td>6.638</td><td>8.406</td><td>10.045</td><td>11.605</td><td>13.108</td></tr>
+</tbody></table></div>
+
+<h3>Scaling rules</h3>
+<ul>
+<li><var>τ</var> ∝ 1/<var>R</var>: one decade in the target rate costs one decade of exposure.</li>
+<li><var>τ</var> ∝ −ln(1 − <var>C</var>): 95% → 99% costs ×1.54.</li>
+<li>Allowing <var>k</var> = 1 costs ×1.58 at 95%. Fix <var>k</var> and <var>τ</var> <em>before</em> testing.</li>
+</ul>
+
+<h3>Benchmarks</h3>
+<div class="tbl-wrap"><table>
+<thead><tr><th>Case</th><th>Target</th><th>Failure-free exposure (95%)</th></tr></thead>
+<tbody>
+<tr><td>RAND, US fatality rate 2013</td><td>1.09 / 10⁸ mi</td><td>2.75 × 10⁸ mi</td></tr>
+<tr><td>Schaller et al. example</td><td>10⁻⁹ / h</td><td>3.0 × 10⁹ h ≈ 342k vehicle-years</td></tr>
+</tbody></table></div>
+
+<h3>Assumption checklist (ask these of any passed test)</h3>
+<ol class="tight">
+<li>Homogeneous Poisson: constant rate and independent events?</li>
+<li>Representative exposure: test mix = deployment mix, per ODD stratum?</li>
+<li>Frozen software: all hours on the release candidate, or a carry-over argument?</li>
+<li>Aggregation: all HB paths to harm <var>H</var> counted, with the budget allocated?</li>
+<li>Confidence semantics: frequentist error bound, or posterior with a stated prior?</li>
+<li>Notation: is “α” confidence (Annex C, per Putze) or type-I error (Betschinske)?</li>
+</ol>
+
+<h3>Sources</h3>
+<p class="meta">ISO 21448:2022 Cl. 6, 9, Annex C · <a href="https://arxiv.org/abs/2304.10170">Putze et al. 2023</a> · <a href="https://arxiv.org/abs/2506.10363">Betschinske et al. 2025</a> · <a href="https://www.rand.org/pubs/research_reports/RR1478.html">Kalra &amp; Paddock 2016</a> · <a href="https://doi.org/10.1007/s44163-026-02186-z">Schaller et al. 2026</a></p>
+</div></main>
+</body>
+</html>

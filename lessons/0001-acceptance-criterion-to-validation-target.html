@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Lesson 1 · Validation Targets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Sans+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main class="page">
+<div class="col">
+
+<nav class="crumbs" aria-label="Course"><a href="../index.html">SOTIF Risk Course</a><span>Lesson 1 of 8</span><span>≈ 15 min</span></nav>
+<h1>From acceptance criterion to validation target</h1>
+<p class="dek">One formula turns “at most this much harm per hour” into “drive this many hours”. You need to be able to derive it, and to say what it quietly assumes.</p>
+
+<div class="mission"><strong>Why this, first.</strong> Every quantitative claim in your residual-risk argument hangs from this link in the chain. Scenario weighting (lesson 4), copulas (5) and SINADRA runtime models (7) all exist to make this one number reachable. If the base derivation is wrong, nothing built on it holds.</div>
+
+<div class="widget">
+  <p class="w-title">Predict first</p>
+  <p style="margin:0">Schaller et al. use the example criterion “overlooking a car on the other lane at most <span class="num">10⁻⁹</span> per hour”.<span class="sn-ref">1</span> How many <em>failure-free</em> operating hours would show that at 95% confidence? Write your order-of-magnitude guess down before you read on. You will check it in §2.</p>
+</div>
+<span class="sn"><span class="sn-ref">1</span> Schaller et al., <em>Discover AI</em> 6:1172 (2026), §5.1. They note this is the order of magnitude civil aviation uses for “extremely improbable” and call the testing needed “prohibitive”.</span>
+
+<h2>1 · The chain</h2>
+<p>ISO 21448 sets an <strong>acceptance criterion</strong> <var>A</var><sub>H</sub> for each harm <var>H</var> (Clause 6). Clause 9 then turns it into one or more <strong>validation targets</strong>: test effort with pass/fail criteria. Annex C.2 gets there by peeling the harm rate back to the rate of the <strong>hazardous behaviour</strong> (HB) that the system itself controls:<span class="sn-ref">2</span></p>
+<span class="sn"><span class="sn-ref">2</span> Formula and variable reading as reported by <a href="https://arxiv.org/abs/2304.10170">Putze et al. (DLR, 2023)</a>, §III, and <a href="https://arxiv.org/abs/2506.10363">Betschinske et al. (2025)</a>, Eq. 6. Check the wording against your licensed copy of Annex C.2.</span>
+<div class="eq"><var>A</var><sub>H</sub> = <var>R</var><sub>HB</sub> · P(E | HB) · P(C̄ | E) · P(S | C̄) <span class="lbl">(1)</span></div>
+<p>Solve for <var>R</var><sub>HB</sub>. Every factor below 1 that you can justify buys test effort. If only 10% of hazardous behaviours occur in an exposing scenario, the system may misbehave ten times more often than the harm criterion allows. The same applies to the other two factors.</p>
+
+<div class="assume"><strong>Assumption 0: the factors</strong>The factors in (1) are taken from field data and treated as properties of the world. Putze et al. point out that they are not: exposure depends on your route choice and ODD, and controllability depends on your fallback behaviour. Each factor needs its own justification <em>for your system</em>. The notation also hides conditioning. Severity really depends on the event and the behaviour too, so the correct term is P(S | C̄, E, HB).</div>
+
+<h2>2 · The zero-failure test</h2>
+<p>Model hazardous behaviours as a Poisson process with rate <var>R</var>. After <var>τ</var> hours the expected count is <var>λ</var> = <var>R</var><var>τ</var>. You drive <var>τ</var> hours and see none. The test is a hypothesis test of H₀: rate ≥ <var>R</var><sub>HB</sub>. Reject H₀ if seeing zero events would be improbable under it:</p>
+<div class="eq">P(0 events | <var>R</var><sub>HB</sub>) = e<sup>−<var>R</var><sub>HB</sub><var>τ</var></sup> ≤ 1 − <var>C</var> &nbsp;⇒&nbsp; <var>τ</var> = −ln(1 − <var>C</var>) / <var>R</var><sub>HB</sub> <span class="lbl">(2)</span></div>
+<p>At <var>C</var> = 0.95, −ln 0.05 ≈ 3.00. This is the reliability engineer’s <em>rule of three</em>: you need about three times the inverse target rate, with zero events. RAND’s famous result is exactly this formula. 1.09 fatalities per 10⁸ miles gives about 275 million failure-free miles.<span class="sn-ref">3</span></p>
+<span class="sn"><span class="sn-ref">3</span> <a href="https://www.rand.org/pubs/research_reports/RR1478.html">Kalra &amp; Paddock, RAND RR-1478 (2016)</a>. They use <var>n</var> = ln(1−<var>C</var>)/ln(1−<var>F</var>), which equals (2) to first order in <var>F</var>.</span>
+
+<div class="assume"><strong>Notation trap</strong>In Putze et al.’s rendering of Annex C, “α” in (2) is the <em>confidence level</em>. In Betschinske et al., α is the <em>type-I error</em>, so their formula reads −ln(α). This course always writes <var>C</var> for confidence. When an assessor quotes “α = 0.05”, ask which one they mean.</div>
+
+<details class="reveal"><summary>Check your §0 prediction</summary>
+<p><var>τ</var> = 3.00 / 10⁻⁹ h⁻¹ ≈ <span class="num">3.0 × 10⁹ h</span>. That is about 342,000 years for one vehicle running 24/7, or 34 years for a fleet of 10,000. This is why Schaller et al. turn to monitor outputs as proxy evidence. It is also why ISO 21448 lets you argue absence of unreasonable risk by means other than direct failure probabilities.</p>
+</details>
+
+<h2>3 · What each observed failure costs</h2>
+<p>A plan may allow <var>k</var> events. The pass condition becomes P(X ≤ <var>k</var> | <var>λ</var>) ≤ 1 − <var>C</var>. The resulting <var>λ</var><sub>k</sub>(<var>C</var>) equals half the χ² quantile with 2(<var>k</var>+1) degrees of freedom:</p>
+<div class="eq"><var>τ</var><sub>k</sub> = <var>λ</var><sub>k</sub>(<var>C</var>) / <var>R</var><sub>HB</sub>, &nbsp; <var>λ</var><sub>k</sub>(<var>C</var>) = ½ χ²<sub>2(k+1)</sub>(<var>C</var>) <span class="lbl">(3)</span></div>
+<div class="tbl-wrap"><table>
+<thead><tr><th><var>k</var> allowed</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead>
+<tbody>
+<tr><td><var>λ</var><sub>k</sub>(0.95)</td><td>2.996</td><td>4.744</td><td>6.296</td><td>7.754</td></tr>
+<tr><td>vs. <var>k</var>=0</td><td>1.00×</td><td>1.58×</td><td>2.10×</td><td>2.59×</td></tr>
+</tbody></table></div>
+<p>The catch is that <var>k</var> and <var>τ</var> must be fixed <em>before</em> you drive. If you see one event and then decide to “just extend to the <var>k</var> = 1 length”, you have changed the test after looking at the data. That inflates the chance of passing a system that misses its target.<span class="sn-ref">4</span> Lesson 2 covers the designs that do allow stopping early: Wald’s sequential test and Bayesian updating.</p>
+<span class="sn"><span class="sn-ref">4</span> <a href="https://arxiv.org/abs/2506.10363">Betschinske et al. (2025)</a>, §on the base model: under classical hypothesis testing, the test “cannot be extended after a failure” without inflating the type-I error.</span>
+
+<div class="widget" data-vtcalc></div>
+<p class="meta">Try it: set <var>k</var> to 1, then <var>C</var> to 0.99, and watch the fleet years. Then set P(E | HB) to 1. That is what you are left with if the exposure factor cannot be defended.</p>
+
+<h2>4 · What a passed test silently assumes</h2>
+<ol class="tight">
+<li><strong>Homogeneous Poisson.</strong> A constant rate and independent events. In reality the rate varies with road type, weather and traffic density, so the result is an average over whatever mix you happened to drive.</li>
+<li><strong>Representative exposure.</strong> The test mix of conditions matches the deployed mix. Your test fleet is not your customer fleet.</li>
+<li><strong>Frozen software.</strong> Every hour was driven on the release candidate. A fix resets the count unless you argue why old hours still apply.</li>
+<li><strong>One behaviour per harm.</strong> If several HBs lead to <var>H</var>, their rates add. Annex C.2 leaves this aggregation out without flagging it (Putze et al.). Lesson 3 covers it.</li>
+<li><strong>Frequentist meaning.</strong> “95%” means a system exactly at the limit would pass at most 5% of the time. It does <em>not</em> mean P(rate &lt; <var>R</var>) = 0.95 unless you state a prior.</li>
+</ol>
+
+<h2>5 · Practice</h2>
+<p>Use pencil or a calculator, not the widget. The point is retrieval.</p>
+
+<div class="widget" data-exercise="e1" data-answer="299573" data-tol="0.02"
+  data-explain="R<sub>HB</sub> = 10⁻⁷ / (0.1 · 0.5 · 0.2) = 10⁻⁵ h⁻¹. τ = 2.996 / 10⁻⁵ ≈ 3.0 × 10⁵ h."
+  data-hint="First solve (1) for R<sub>HB</sub>, then apply (2) with −ln 0.05 ≈ 3.00.">
+  <p class="w-title">Exercise 1 · Derive τ</p>
+  <p><var>A</var><sub>H</sub> = 10⁻⁷ h⁻¹, P(E | HB) = 0.1, P(C̄ | E) = 0.5, P(S | C̄) = 0.2, <var>C</var> = 0.95, <var>k</var> = 0. How many test hours?</p>
+  <div class="grid"><div class="field"><label for="e1-in">τ in hours</label><input id="e1-in" type="text" inputmode="decimal" placeholder="e.g. 1.2e6"></div>
+  <div class="field" style="justify-content:flex-end"><button type="button">Check</button></div></div>
+  <div class="q-fb" aria-live="polite"></div>
+</div>
+
+<div class="widget" data-exercise="e2" data-answer="474390" data-tol="0.02"
+  data-explain="λ₁(0.95) = 4.744, so τ₁ = 4.744 / 10⁻⁵ ≈ 4.74 × 10⁵ h, which is 58% more than the zero-failure plan. You must commit to this before you start driving."
+  data-hint="Use the k = 1 factor from the table in §3.">
+  <p class="w-title">Exercise 2 · Allow one event</p>
+  <p>Same system. Management wants a plan that tolerates one hazardous behaviour. How long must the plan be?</p>
+  <div class="grid"><div class="field"><label for="e2-in">τ₁ in hours</label><input id="e2-in" type="text" inputmode="decimal" placeholder="e.g. 1.2e6"></div>
+  <div class="field" style="justify-content:flex-end"><button type="button">Check</button></div></div>
+  <div class="q-fb" aria-live="polite"></div>
+</div>
+
+<div class="widget" data-exercise="e3" data-answer="1.537" data-tol="0.02"
+  data-explain="ln(1/0.01) / ln(1/0.05) = 4.605 / 2.996 ≈ 1.54. Confidence is cheap compared with the target rate: τ scales linearly in 1/R but only logarithmically in 1/(1−C)."
+  data-hint="Take the ratio of −ln(1−C) at C = 0.99 and at C = 0.95.">
+  <p class="w-title">Exercise 3 · Price of confidence</p>
+  <p>An assessor asks for 99% instead of 95% (<var>k</var> = 0). By what factor does <var>τ</var> grow?</p>
+  <div class="grid"><div class="field"><label for="e3-in">Factor</label><input id="e3-in" type="text" inputmode="decimal" placeholder="e.g. 2.5"></div>
+  <div class="field" style="justify-content:flex-end"><button type="button">Check</button></div></div>
+  <div class="q-fb" aria-live="polite"></div>
+</div>
+
+<div class="widget" data-quiz="lesson-0001">
+<p class="w-title">Check your understanding</p>
+<script type="application/json">
+{"questions":[
+ {"prompt":"Your plan is k = 0, τ = 300,000 h, C = 0.95. At 150,000 h one hazardous behaviour occurs. What is statistically valid?",
+  "options":["Extend driving to 474,000 h and then pass","Declare this plan failed, then fix and replan","Treat the event as an outlier and continue","Drop confidence to 0.90 so the plan passes"],
+  "answer":1,
+  "explain":"The plan was a fixed design with k = 0. Switching to k = 1 or lowering C after seeing data is optional stopping, and it inflates the chance of passing a system that misses the target. The fix you make also changes the software, so pre-fix hours need an argument before they count again. Sequential designs that allow early stopping are in lesson 2."},
+ {"prompt":"A zero-failure test of length τ at C = 0.95 has passed. Which statement does it justify?",
+  "options":["The system will cause harm at most once per τ","The true rate is below R with 95% posterior probability","Ninety-five percent of the deployed vehicles will meet this criterion","A system at rate R passes ≤5% of such tests"],
+  "answer":3,
+  "explain":"That is the frequentist guarantee: a limit on the error rate of the procedure. “95% probability the rate is below R” is a Bayesian posterior statement. It needs a stated prior; with the flat Gamma(1, 0) prior the numbers happen to coincide (Betschinske et al.). An assessor may press you on exactly this difference."},
+ {"prompt":"80% of your test fleet’s hours were on motorways, but the deployment ODD is 70% urban. Which assumption fails first?",
+  "options":["Test exposure represents the exposure in deployment","Hazardous behaviours follow a homogeneous Poisson process","The software under test stays frozen throughout","Severity given non-controllability is independent of system"],
+  "answer":0,
+  "explain":"The demonstrated rate is an average over the conditions you drove. If the strata differ in hazard rate, the average does not transfer to deployment. You could stratify and re-weight by ODD exposure (importance weighting, lessons 4 and 6). That requires per-stratum evidence. The non-homogeneous rate is the mechanism, but the broken premise is representativeness."},
+ {"prompt":"Harm H can arise from three distinct hazardous behaviours. Each was validated against the R<sub>HB</sub> derived from the full A<sub>H</sub>. What is wrong?",
+  "options":["Nothing, since each behaviour met the same target","Only the most severe behaviour needed any validation","Their contributions add, so harm may approach 3·A<sub>H</sub>","Validation targets apply per scenario, never per behaviour"],
+  "answer":2,
+  "explain":"P(H) is bounded by the sum over (trigger, behaviour, event) paths, which is a Bonferroni-type bound (Putze et al., Eq. 2). Giving every path the whole budget can triple the harm rate. You have to allocate the budget across paths, which is lesson 3. Confidence aggregates too: joint confidence ≥ 1 − Σ(1 − C<sub>i</sub>)."},
+ {"prompt":"Putze et al. criticise the Annex C.2 term P(S | C). What is their objection?",
+  "options":["Severity is no probability, so it cannot be conditioned","Severity also depends on event and behaviour, not controllability","Controllability belongs to ISO 26262, not to SOTIF analysis","The term double-counts the exposure already contained within R<sub>HB</sub>"],
+  "answer":1,
+  "explain":"A correct chain-rule decomposition needs P(S | C, E, HB). The same behaviour can be more severe in one exposing scenario than in another. Dropping the conditioning silently assumes independence, and you would have to justify that."}
+]}
+</script>
+</div>
+
+<div class="source">
+  <p class="w-title">Primary source for this lesson</p>
+  <p style="margin:0"><a href="https://arxiv.org/abs/2304.10170">Putze, Westhofen, Koopmann, Böde &amp; Neurohr, “On Quantification for SOTIF Validation of Automated Driving Systems” (DLR, 2023)</a>. It is 8 pages; read §III alongside ISO 21448 Annex C.2–C.3 from your company licence. Then skim the “base model” section of <a href="https://arxiv.org/abs/2506.10363">Betschinske et al. (2025)</a> for the hypothesis-test framing.</p>
+</div>
+
+<p class="ask">Anything unclear, or something you would push back on? Ask me in the chat. I am your teacher for this course. A good first question to try: “How would I defend P(E | HB) = 0.1 for our ODD?”</p>
+
+<nav class="nav" aria-label="Lesson navigation">
+  <a href="../index.html">← Course overview</a>
+  <a href="../reference/validation-targets.html">Reference sheet: validation targets →</a>
+</nav>
+</div>
+</main>
+<script src="../assets/vt-calc.js"></script>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

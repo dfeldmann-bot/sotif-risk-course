@@ -1,0 +1,159 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'>
+<title>Validation Target Equations</title>
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&family=JetBrains+Mono&display=swap'>
+<style>
+:root{--bg:#f6f7f5;--fg:#1a2220;--soft:#4a5654;--rule:#d5dbd8;--panel:#ebefed;--accent:#0e6b63;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#121816;--fg:#e3e9e6;--soft:#a3b0ac;--rule:#2c3734;--panel:#1b2421;--accent:#4fb8ad;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 1.05rem/1.6 "Source Serif 4",Georgia,serif;
+ padding:2.5rem max(16px,env(safe-area-inset-right,0px)) 4rem max(16px,env(safe-area-inset-left,0px))}
+main{max-width:46rem;margin:0 auto}
+h1{font-size:2rem;line-height:1.15;margin:.2rem 0 .5rem;text-wrap:balance}
+h2{font:600 .85rem/1 "IBM Plex Sans Condensed",Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:2.8rem 0 .8rem;border-bottom:1px solid var(--rule);padding-bottom:.4rem}
+.eq{margin:0 0 1.8rem}
+.eq h3{font-size:1.05rem;margin:0 0 .3rem}
+.eq h3 .n{font-family:"JetBrains Mono",monospace;color:var(--soft);font-weight:400;margin-right:.5rem}
+.tex{background:var(--panel);padding:.6rem 1rem;overflow-x:auto;border-radius:3px}
+.worked{border-left:3px solid var(--accent);padding:.1rem 0 .1rem .9rem;margin:.5rem 0;overflow-x:auto}
+.src,.meta{font-size:.85rem;color:var(--soft)}
+table{border-collapse:collapse;font:400 .9rem "JetBrains Mono",monospace;margin:.5rem 0 1rem}
+td,th{padding:.25rem .8rem;border-bottom:1px solid var(--rule);text-align:right}
+td:first-child,th:first-child{text-align:left;font-family:"Source Serif 4",Georgia,serif}
+</style>
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']]},svg:{fontCache:'global'}};</script>
+<script defer src='https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js'></script>
+</head><body><main>
+<p class='meta'>SOTIF Risk Course · Lesson 1 · generated 2026-10-20</p>
+<h1>Validation target equations</h1>
+<p>From acceptance criterion to required test exposure under ISO 21448. Worked numbers use the inputs below; regenerate with your own values via the command-line flags.</p>
+<table><tr><th>Input</th><th>Value</th></tr>
+<tr><td>A_H (1/h)</td><td>1e-07</td></tr>
+<tr><td>P(E | HB)</td><td>0.1</td></tr>
+<tr><td>P(C̄ | E)</td><td>0.5</td></tr>
+<tr><td>P(S | C̄)</td><td>0.2</td></tr>
+<tr><td>Confidence C</td><td>0.95</td></tr>
+<tr><td>Events allowed k</td><td>0</td></tr>
+<tr><td>Fleet size</td><td>50</td></tr>
+<tr><td>Hours / vehicle-year</td><td>3000</td></tr>
+</table>
+<table><tr><th>Result</th><th>Value</th></tr><tr><td>R_HB (1/h)</td><td>1.000e-05</td></tr><tr><td>τ, k = 0 (h)</td><td>299,573</td></tr><tr><td>λ_k(C)</td><td>2.9957</td></tr><tr><td>τ_k (h)</td><td>299,573</td></tr><tr><td>Calendar years</td><td>2.00</td></tr></table>
+<h2>Decomposition</h2>
+<div class='eq'>
+<h3><span class='n'>(1)</span>Annex C.2 factorisation of the acceptance criterion</h3>
+<div class='tex'>\[A_H = R_{HB}\cdot P(E\mid HB)\cdot P(\bar C\mid E)\cdot P(S\mid \bar C)\]</div>
+<p>The harm rate is the hazardous-behaviour rate multiplied by the chance it meets an exposing scenario, is not controlled, and reaches severity S.</p>
+<div class='worked'>\[A_H = 1.00\times 10^{-7}\ \mathrm{h^{-1}},\quad P(E\mid HB)=0.1,\ P(\bar C\mid E)=0.5,\ P(S\mid\bar C)=0.2\]</div>
+<p class='src'>Source: ISO 21448:2022 Annex C.2, as rendered by Putze et al. 2023 (arXiv:2304.10170)</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(2)</span>Tolerable hazardous-behaviour rate</h3>
+<div class='tex'>\[R_{HB} = \frac{A_H}{P(E\mid HB)\,P(\bar C\mid E)\,P(S\mid \bar C)}\]</div>
+<p>Solve the factorisation for the rate the system itself controls. Each justified factor below 1 relaxes the target.</p>
+<div class='worked'>\[R_{HB} = \frac{1.00\times 10^{-7}}{0.1\cdot0.5\cdot0.2} = 1.00\times 10^{-5}\ \mathrm{h^{-1}}\]</div>
+<p class='src'>Source: Betschinske et al. 2025 (arXiv:2506.10363), Eq. 6</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(3)</span>Correct conditioning (chain rule)</h3>
+<div class='tex'>\[P(H) = P(HB)\,P(E\mid HB)\,P(\bar C\mid E,HB)\,P(S\mid \bar C,E,HB)\]</div>
+<p>Annex C.2 drops conditioning. Using P(S | C̄) silently assumes severity is independent of the scenario and the behaviour, which you would have to justify.</p>
+<p class='src'>Source: Putze et al. 2023, §III</p>
+</div>
+<h2>Zero-failure test</h2>
+<div class='eq'>
+<h3><span class='n'>(4)</span>Poisson model for hazardous behaviours</h3>
+<div class='tex'>\[P(X = n \mid \lambda) = \frac{\lambda^{n} e^{-\lambda}}{n!},\qquad \lambda = R\,\tau\]</div>
+<p>Expected count after τ hours of exposure at constant rate R (homogeneous Poisson process).</p>
+<p class='src'>Source: Standard; Annex C.3 per Betschinske et al. 2025</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(5)</span>Hypotheses</h3>
+<div class='tex'>\[H_0:\ R &gt; A_H \qquad H_1:\ R \le A_H\]</div>
+<p>Passing the test rejects H₀. In Lesson 1 the test is applied at the behaviour level, with R_HB as the threshold.</p>
+<p class='src'>Source: Betschinske et al. 2025, Eq. 3</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(6)</span>Pass condition with zero observed events</h3>
+<div class='tex'>\[P(X=0\mid R_{HB}\tau) = e^{-R_{HB}\tau} \le 1-C\]</div>
+<p>A system exactly at the limit would show zero events with probability at most 1 − C.</p>
+<p class='src'>Source: Lesson 1, Eq. 2</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(7)</span>Validation target (k = 0)</h3>
+<div class='tex'>\[\tau = \frac{-\ln(1-C)}{R_{HB}}\]</div>
+<p>Required failure-free exposure. Notation: Putze et al. write α for the confidence C; Betschinske et al. write α for 1 − C, so their form is −ln(α)/A_H.</p>
+<div class='worked'>\[\tau = \frac{-\ln(1-0.95)}{1.00\times 10^{-5}} = \frac{2.9957}{1.00\times 10^{-5}} = 2.996\times 10^{5}\ \mathrm{h}\]</div>
+<p class='src'>Source: ISO 21448 Annex C (per Putze et al. 2023); Betschinske et al. 2025, Eq. 5</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(8)</span>Rule of three</h3>
+<div class='tex'>\[-\ln(1-0.95) = \ln 20 \approx 2.996 \;\Rightarrow\; \tau \approx \frac{3}{R_{HB}}\]</div>
+<p>At 95% confidence you need about three times the inverse target rate, with zero events.</p>
+<p class='src'>Source: Standard reliability result</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(9)</span>RAND exact form (per-mile Bernoulli trials)</h3>
+<div class='tex'>\[n = \frac{\ln(1-C)}{\ln(1-F)} \;\approx\; \frac{-\ln(1-C)}{F}\quad (F \ll 1)\]</div>
+<p>Kalra &amp; Paddock treat each mile as a trial with failure probability F. It agrees with the Poisson form to first order in F.</p>
+<div class='worked'>\[F = 1.09\times10^{-8}\ \mathrm{mi^{-1}},\ C=0.95:\quad n = 2.748\times 10^{8}\ \text{failure-free miles}\]</div>
+<p class='src'>Source: Kalra &amp; Paddock, RAND RR-1478 (2016), Eq. 2</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(10)</span>Schaller et al. example</h3>
+<div class='tex'>\[R = 10^{-9}\ \mathrm{h^{-1}},\ C = 0.95:\quad \tau = \frac{2.996}{10^{-9}}\]</div>
+<p>Their example criterion for overlooking a car on the other lane. This is why they argue for monitor outputs as proxy evidence.</p>
+<div class='worked'>\[\tau = 3.00\times 10^{9}\ \mathrm{h} \approx 341{,}744\ \text{vehicle-years (24/7)}\]</div>
+<p class='src'>Source: Schaller et al. 2026, Discover AI 6:1172, §5.1</p>
+</div>
+<h2>Plans allowing k events</h2>
+<div class='eq'>
+<h3><span class='n'>(11)</span>Pass condition with up to k events</h3>
+<div class='tex'>\[P(X \le k \mid \lambda) = \sum_{i=0}^{k} \frac{\lambda^{i}e^{-\lambda}}{i!} \le 1 - C\]</div>
+<p>Fix k and τ before driving. Changing either after seeing data inflates the type-I error.</p>
+<p class='src'>Source: Betschinske et al. 2025, Eq. 4</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(12)</span>Poisson–χ² identity</h3>
+<div class='tex'>\[\lambda_k(C) = \tfrac12\,\chi^2_{2(k+1)}(C), \qquad \tau_k = \frac{\lambda_k(C)}{R_{HB}}\]</div>
+<p>The λ that solves the pass condition with equality is half the χ² quantile with 2(k+1) degrees of freedom.</p>
+<div class='worked'>\[k=0,\ C=0.95:\quad \lambda_k = 2.9957,\quad \tau_k = 2.996\times 10^{5}\ \mathrm{h}\]</div>
+<p class='src'>Source: Standard (Poisson–gamma–χ² relation)</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(13)</span>Calendar time for a test fleet</h3>
+<div class='tex'>\[T_{\text{cal}} = \frac{\tau_k}{N_{\text{fleet}}\cdot h_{\text{yr}}}\]</div>
+<p>Converts exposure into calendar years for a given fleet.</p>
+<div class='worked'>\[T_{\text{cal}} = \frac{2.996\times 10^{5}}{50\cdot3000} = 2.00\ \text{years}\]</div>
+<p class='src'>Source: Lesson 1 calculator</p>
+</div>
+<h2>Scaling</h2>
+<div class='eq'>
+<h3><span class='n'>(14)</span>Price of confidence</h3>
+<div class='tex'>\[\frac{\tau(C_2)}{\tau(C_1)} = \frac{\ln(1-C_2)}{\ln(1-C_1)}\]</div>
+<p>τ grows only logarithmically with confidence but linearly with 1/R.</p>
+<div class='worked'>\[\frac{\tau(0.99)}{\tau(0.95)} = \frac{\ln 0.01}{\ln 0.05} = 1.537\]</div>
+<p class='src'>Source: Lesson 1, Exercise 3</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(15)</span>Price of allowing k events</h3>
+<div class='tex'>\[\frac{\tau_k}{\tau_0} = \frac{\lambda_k(C)}{-\ln(1-C)}\]</div>
+<p>At 95%, one allowed event costs 58% more exposure.</p>
+<div class='worked'>\[\frac{\tau_1}{\tau_0}\Big|_{C=0.95} = \frac{4.744}{2.996} = 1.584\]</div>
+<p class='src'>Source: Lesson 1, §3</p>
+</div>
+<h2>Aggregation</h2>
+<div class='eq'>
+<h3><span class='n'>(16)</span>Bonferroni-type bound over triggering condition → behaviour → event paths</h3>
+<div class='tex'>\[P(H) \le \sum_{T,B,E} P(T)\,P(B\mid T)\,P(E\mid B,T)\,P(H\mid E,B,T)\]</div>
+<p>Several paths can lead to the same harm, and their contributions add. Annex C.2 omits this aggregation, so the budget A_H must be allocated across paths.</p>
+<p class='src'>Source: Putze et al. 2023, Eq. 2</p>
+</div>
+<div class='eq'>
+<h3><span class='n'>(17)</span>Joint confidence over several validation targets</h3>
+<div class='tex'>\[C_{\text{joint}} \ge 1 - \sum_i (1 - C_i)\]</div>
+<p>If you validate m paths separately, the confidence that all of them hold is at least this (Bonferroni).</p>
+<div class='worked'>\[m = 3,\ C_i = 0.95:\quad C_{\text{joint}} \ge 0.85\]</div>
+<p class='src'>Source: Betschinske et al. 2025 (decomposition of hazardous behaviour)</p>
+</div>
+<h2>Assumptions behind every result above</h2><ol><li>Homogeneous Poisson process: constant rate, independent events.</li><li>Representative exposure: the test mix of conditions equals the deployed mix.</li><li>Frozen software, or an argued carry-over of hours across fixes.</li><li>All paths to harm H are counted, with the budget allocated (Eq. 16–17).</li><li>Frequentist confidence: not P(rate &lt; R) = C unless you state a prior.</li></ol>
+</main></body></html>

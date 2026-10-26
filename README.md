@@ -1,0 +1,40 @@
+# SOTIF Risk Course
+
+A self-paced course on quantitative risk calculation and validation under ISO 21448 (SOTIF), from acceptance criteria through validation targets to scenario-based residual-risk estimation.
+
+## Contents
+
+| Path | What it is |
+|---|---|
+| `index.html` | Course overview and syllabus (8 lessons planned) |
+| `lessons/` | Interactive lessons (open in a browser). Lesson 1: acceptance criterion → validation target |
+| `reference/` | Printable reference sheets (validation-target formulas, χ² factor table, assumption checklist) |
+| `assets/` | Shared stylesheet, quiz engine, validation-target calculator |
+| `tools/build_workbook.py` → `tools/sotif_validation_targets.xlsx` | Every lesson 1 calculation as live Excel formulas |
+| `tools/make_equations_html.py` | Renders all validation-target equations (MathJax) with worked numbers; takes your inputs as CLI flags |
+| `tools/ub_sim.py` + `tools/build_ub_example.py` → `tools/unintended_braking_risk_example.xlsx` | Worked example: one validation target (MAIS2+ rear-end injury from unintended braking) over 100 logical scenarios: exposure × HB rate × P(collision\|HB) × P(injury), with point, Bonferroni and Bayesian bounds and per-cell evidence targets |
+| `MISSION.md`, `RESOURCES.md`, `NOTES.md` | Learning goals, curated sources, teaching notes |
+
+## Running the tools
+
+```bash
+cd tools
+python3 make_equations_html.py --A_H 1e-8 --C 0.99 --k 1 -o my_targets.html   # stdlib only
+python3 build_workbook.py                                                     # needs openpyxl
+python3 build_ub_example.py                                                   # needs numpy, openpyxl
+```
+
+The workbooks are written by openpyxl without cached values. Excel recalculates them when opened; for LibreOffice, use *Data → Calculate → Recalculate Hard*.
+
+## Important
+
+**All numbers in the examples are synthetic and illustrative.** They demonstrate the calculation chain and describe no real system. The ISO 21448 Annex C formulas are quoted as rendered by Putze et al. (2023) and Betschinske et al. (2025); check them against a licensed copy of the standard.
+
+## Key sources
+
+- ISO 21448:2022, Clauses 6, 9, Annex C
+- Putze et al. (2023), *On Quantification for SOTIF Validation of Automated Driving Systems*, arXiv:2304.10170
+- Betschinske et al. (2025), *Towards more efficient quantitative safety validation of residual risk…*, arXiv:2506.10363
+- Kalra & Paddock (2016), *Driving to Safety*, RAND RR-1478
+- Schaller et al. (2026), *Discover Artificial Intelligence* 6:1172
+- de Gelder (2022), *Safety assessment of automated vehicles using real-world driving scenarios*, PhD thesis, TU Delft

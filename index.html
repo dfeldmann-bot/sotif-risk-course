@@ -1,0 +1,38 @@
+<title>SOTIF Risk Course</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Sans+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="assets/course.css">
+<style>
+  .syllabus { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; gap: 0; }
+  .syllabus li { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: .2rem 1rem; align-items: baseline; padding: .9rem 0; border-top: 1px solid var(--rule); }
+  .syllabus li:last-child { border-bottom: 1px solid var(--rule); }
+  .syllabus .n { font: 600 var(--step-0) var(--mono); color: var(--ink-soft); }
+  .syllabus .t { font-weight: 600; min-width: 0; }
+  .syllabus .d { grid-column: 2 / 4; font-size: var(--step--1); color: var(--ink-soft); }
+  .syllabus .st { font: 600 .72rem/1 var(--label); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .syllabus li.open .st { color: var(--accent); }
+  .syllabus li.open .n { color: var(--accent); }
+  @media (max-width: 480px) { .syllabus li { grid-template-columns: 2rem 1fr; } .syllabus .st { grid-column: 2; } .syllabus .d { grid-column: 2; } }
+</style>
+<main class="page"><div class="col">
+<p class="crumbs"><span>Course</span><span>For David Feldmann</span></p>
+<h1>SOTIF Risk Course</h1>
+<p class="dek">Quantitative risk calculation and validation under ISO 21448, from acceptance criteria to the residual-risk argument you can defend in front of an assessor.</p>
+
+<div class="mission"><strong>Mission.</strong> Build and defend the quantitative residual-risk argument for an L4 system: acceptance criteria → validation targets → evidence. This includes total and per-scenario risk from the scenario database, and where runtime risk models (SINADRA, monitor ensembles) fit in.</div>
+
+<ol class="syllabus">
+  <li class="open"><span class="n">01</span><a class="t" href="lessons/0001-acceptance-criterion-to-validation-target.html">From acceptance criterion to validation target</a><span class="st">Open</span><span class="d">Annex C decomposition, the Poisson zero-failure test, k-failure plans, and five hidden assumptions.</span></li>
+  <li><span class="n">02</span><span class="t">Testing designs that survive reality</span><span class="st">Next</span><span class="d">Test-fix-retest, Wald’s SPRT, Bayesian priors and what an assessor will accept.</span></li>
+  <li><span class="n">03</span><span class="t">Allocating the risk budget</span><span class="st">Planned</span><span class="d">Bonferroni over trigger → behaviour → event paths; QRN-style incident budgets.</span></li>
+  <li><span class="n">04</span><span class="t">Scenario-weighted risk</span><span class="st">Planned</span><span class="d">Exposure × P(harm | scenario); per-scenario contribution; what your scenario database must store.</span></li>
+  <li><span class="n">05</span><span class="t">Dependent parameters with copulas</span><span class="st">Planned</span><span class="d">Sklar’s theorem, fitting, and Monte Carlo over correlated scenario parameters.</span></li>
+  <li><span class="n">06</span><span class="t">Rare events</span><span class="st">Planned</span><span class="d">Importance sampling, cross-entropy, extreme value analysis.</span></li>
+  <li><span class="n">07</span><span class="t">Runtime risk: SINADRA and monitor ensembles</span><span class="st">Planned</span><span class="d">SEM → CBCT → Bayesian network; what runtime evidence can and cannot add to the argument.</span></li>
+  <li><span class="n">08</span><span class="t">Assessor drills</span><span class="st">Planned</span><span class="d">Attack and defend quantitative claims under time pressure.</span></li>
+</ol>
+
+<h3>Reference sheets</h3>
+<p><a href="reference/validation-targets.html">Validation targets</a>: formulas, χ² factor table, benchmarks and the assumption checklist.</p>
+<p class="meta">Anchor texts: Reich, <em>SINADRA</em> (Dr.-Ing. thesis, RPTU 2026) · Schaller et al., <em>Discover AI</em> 6:1172 (2026) · ISO 21448:2022.</p>
+</div></main>
