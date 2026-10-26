@@ -12,7 +12,10 @@ A self-paced course on quantitative risk calculation and validation under ISO 21
 | `assets/` | Shared stylesheet, quiz engine, validation-target calculator |
 | `tools/build_workbook.py` → `tools/sotif_validation_targets.xlsx` | Every lesson 1 calculation as live Excel formulas |
 | `tools/make_equations_html.py` | Renders all validation-target equations (MathJax) with worked numbers; takes your inputs as CLI flags |
-| `tools/ub_sim.py` + `tools/build_ub_example.py` → `tools/unintended_braking_risk_example.xlsx` | Worked example: one validation target (MAIS2+ rear-end injury from unintended braking) over 100 logical scenarios: exposure × HB rate × P(collision\|HB) × P(injury), with point, Bonferroni and Bayesian bounds and per-cell evidence targets |
+| `tools/ub_sim.py` + `tools/build_ub_example.py` → `tools/unintended_braking_risk_example.xlsx` | Worked example: one validation target (MAIS2+ rear-end injury from unintended braking) over 100 logical scenarios and 1,000 importance-sampled concrete scenarios (Gaussian-copula parameters): exposure × HB rate × P(collision\|HB) × P(injury), with point, Bonferroni and Bayesian bounds, per-cell evidence targets, and a live copula sheet |
+| `docs/01-scenario-based-risk.md` | From scenario evaluations to residual risk: estimator, importance weights, relation to validation targets, parameterisation, sources of each conditional probability |
+| `docs/02-field-data-and-spis.md` | What to collect in field testing, statistics to compute, leading/lagging SPIs with an example SPI register |
+| `docs/03-gaussian-copula.md` | Gaussian copula for scenario parameters: sampling, density for IS weights, fitting, limits |
 | `MISSION.md`, `RESOURCES.md`, `NOTES.md` | Learning goals, curated sources, teaching notes |
 
 ## Running the tools

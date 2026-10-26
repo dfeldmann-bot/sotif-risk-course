@@ -5,6 +5,7 @@
 - Storage: the workspace is synced to the claude.ai project "sinadra" (docs under `course/`). Lessons are published as one multi-file artifact, "SOTIF Risk Course".
 - Interview (2026-10-20) selected every outcome and every gap area. Primary outcome: the residual-risk argument. The curriculum order follows the chain of that argument.
 
+- 2026-10-26: Covered informally (docs/01–03): scenario-based risk estimator, IS weights, Gaussian copula, field data and SPIs. Not yet tested by quiz, so no learning record.
 - 2026-10-20: David's HARA structure is 24 HB → 160 HE, with ~16,000 logical scenarios assigned per HE (or in total? unconfirmed), and n concrete scenarios each. His open question is how to derive risk over all of them. Lesson 4 (scenario-weighted risk) is pulled forward and should use this structure as the running example.
 
 ## Curriculum map (draft — revise as learning records accumulate)
