@@ -731,8 +731,8 @@ def sfig_pair_coverage():
 
 
 def sfig_saturation():
-    rng = np.random.default_rng(44); S_true = 300
-    probs = 1 / np.arange(1, S_true + 1) ** 1.3; probs /= probs.sum()
+    rng = np.random.default_rng(44); S_true = 1000
+    probs = 1 / np.arange(1, S_true + 1) ** 1.8; probs /= probs.sum()
     N = 200_000; draws = rng.choice(S_true, size=N, p=probs)
     checkpoints = np.unique(np.logspace(2, np.log10(N), 40).astype(int))
     Sobs, chao, gt, true_miss = [], [], [], []
@@ -832,7 +832,7 @@ TestRun(id, category_id, θ…, q_density, platform, sw_hash, outcome, Δv)</pre
 </ol>
 <div class="math">\\[ \\hat M_0 = \\frac{{f_1}}{{N}}\\ \\ (\\text{{Good–Turing}}), \\qquad \\hat S = S_{{\\text{{obs}}}} + \\frac{{f_1(f_1-1)}}{{2(f_2+1)}}\\ \\ (\\text{{Chao1}}), \\qquad R_{{\\text{{unknown}}}} \\lesssim \\hat M_0\\,\\nu_{{\\text{{tot}}}}\\,\\bar p_{{\\text{{unk}}}} \\]</div>
 <p>\\(f_1, f_2\\): number of types seen exactly once or twice; \\(N\\): occurrences; \\(\\nu_{{\\text{{tot}}}}\\): total scenario occurrence rate; \\(\\bar p_{{\\text{{unk}}}}\\): harm per unknown occurrence, bounded conservatively or by field driving. Hauer et al. (2019) frame the same question as “did we test all scenario types?”.</p>
-{figure(sat_svg, f"Synthetic: 300 scenario types with a long-tailed (Zipf) frequency distribution. After 200,000 occurrences, {sobs} types are seen and Chao1 estimates {chao:.0f}; the Good–Turing missing mass is {gtm:.1e} (true: {tmiss:.1e}). The rare tail is reached last, and rare is also where triggering conditions hide. That is why saturation is one leg, not the whole argument.", 4)}
+{figure(sat_svg, f"Synthetic: 1,000 scenario types with a long-tailed (Zipf, exponent 1.8) frequency distribution. After 200,000 occurrences, {sobs:.0f} types are seen and Chao1 estimates {chao:.0f}, a lower bound on the true 1,000; the Good–Turing missing mass is {gtm:.1e} (true: {tmiss:.1e}). The rare tail is reached last, and rare is also where triggering conditions hide. That is why saturation is one leg, not the whole argument.", 4)}
 
 <h2>7 · OpenLABEL vs. ISO 34504 tags</h2>
 <div class="tbl-wrap"><table class="doc"><thead><tr><th></th><th>ASAM OpenLABEL (v1.0.0, 2021)</th><th>ISO 34504:2024</th></tr></thead><tbody>

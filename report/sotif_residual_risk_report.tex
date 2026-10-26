@@ -1,0 +1,621 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.4cm,headheight=14pt]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath,amssymb}
+\usepackage{unicode-math}
+\setmainfont{Latin Modern Roman}
+\setsansfont{Latin Modern Sans}
+\setmonofont{Latin Modern Mono}[Scale=0.95]
+\setmathfont{Latin Modern Math}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{longtable,booktabs,array,tabularx}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf,margin=0.4cm}
+\usepackage{float}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,columns=fullflexible,frame=single,framerule=0.3pt}
+\usepackage{xcolor}
+\definecolor{accent}{HTML}{2A78D6}
+\definecolor{linkblue}{HTML}{1F4E9A}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+\usepackage[hyphens]{xurl}
+\usepackage[colorlinks=true,linkcolor=linkblue,urlcolor=linkblue,citecolor=linkblue,bookmarksnumbered=true,pdfusetitle]{hyperref}
+\usepackage{fancyhdr}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\itshape Quantitative residual-risk validation for SOTIF}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\setlength{\parskip}{3pt plus 1pt}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3em}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash\hspace{0pt}}p{#1}}
+\newcommand{\own}[1]{\textit{(this report, #1)}}
+\newcommand{\synthetic}{\textsuperscript{\textsf{S}}}
+\newcommand{\RHB}{R_{\mathrm{HB}}}
+\setcounter{tocdepth}{2}
+
+\title{\textbf{Quantitative Residual-Risk Validation for SOTIF}\\[4pt]
+\large From acceptance criteria to scenario-based evidence for an L4 automated driving system}
+\author{David Feldmann}
+\date{26 October 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+This report collects, in one place, the quantitative chain needed to argue that the residual risk of an automated driving system is acceptable under ISO~21448 (SOTIF). It starts from an acceptance criterion, derives validation targets for field operational testing, and shows why those targets become infeasible for an L4 system. It then develops scenario-based residual-risk estimation (exposure, parameter distributions with a Gaussian copula, importance sampling), works through a fully synthetic example with 100 logical and 1{,}000 concrete scenarios for unintended braking, and derives the field data, statistics and safety performance indicators (SPIs) that the argument needs. It closes with a vehicle-level validation strategy for L4, the role of a scenario database, automatic scenario identification, the granularity of ODD tags, arguments for completeness, and how the approach scales from ACC to an urban robotaxi. Every statement taken from the literature carries a pinpoint citation (section, equation, table, page or slide), so the reader can check it at the source.
+\end{abstract}
+
+\noindent\textbf{Highlights}
+{\small
+\begin{itemize}[leftmargin=1.2em]
+\item The Annex~C validation target $\tau=-\ln(1-C)/\RHB$ rests on five assumptions that an assessor can attack; each is stated with its source.
+\item Counting critical scenario runs is not a risk estimate; only weights $w=f/q$ connect test runs to real-world exposure.
+\item In the synthetic example, the Bayesian 95\% bound passes the budget while a Bonferroni bound over 120 estimates fails: the inference method decides the evidence plan.
+\item Ignoring parameter dependence changed $P(\text{collision}\mid\text{HB})$ by a factor of 1.06 to 3.2 in the example.
+\item Completeness of a scenario concept cannot be proven; it is argued from construction, explained time, saturation, a risk-weighted remainder and operational monitoring.
+\end{itemize}
+}
+
+\clearpage
+\tableofcontents
+\clearpage
+
+%=====================================================================
+\section{Introduction}
+\subsection{Purpose and scope}
+The report supports a SOTIF engineer who must build and defend the quantitative part of a residual-risk argument for a Level~4 system. It covers the statistics behind validation targets, scenario-based risk estimation, the data that feeds it, and how the pieces fit into a vehicle-level validation strategy. It does not cover ISO~26262 hardware metrics or cybersecurity.
+
+\subsection{How sources are cited}
+Citations give the location inside the source in square brackets, for example \cite[Sec.~IV-B, Eq.~(1)]{putze2023} or \cite[p.~3, Eq.~2]{kalra2016}. The locations were checked against the source texts in October 2026. Three conventions apply:
+\begin{itemize}
+\item \textbf{Standards.} The ISO standards themselves were not available to the author of this report. Clause, annex and page references to ISO~21448, ISO/TS~5083 and UL~4600 are therefore taken from the secondary source named in the same citation, for example ``ISO~21448, Annex~C.3, p.~137, as cited in \cite[Sec.~III-C]{betschinske2025}''. Check them against a licensed copy before relying on them.
+\item \textbf{Location not verified.} Where only the source, not the location, could be checked, the citation says so.
+\item \textbf{Own results.} Numbers computed for this report are marked \own{Sec.~x / Fig.~y}. All example data are synthetic, marked \synthetic, and describe no real system. The code that produces them is listed in Appendix~\ref{app:code}.
+\end{itemize}
+
+\subsection{Structure}
+Section~\ref{sec:framework} summarises the SOTIF framework for quantitative validation. Section~\ref{sec:vt} derives validation targets from acceptance criteria. Section~\ref{sec:scenario} develops scenario-based risk estimation, and Section~\ref{sec:copula} the Gaussian copula for scenario parameters. Section~\ref{sec:example} works through the unintended-braking example. Section~\ref{sec:field} covers field data, statistics and SPIs. Section~\ref{sec:l4} treats the L4 vehicle-level strategy, the scenario database and completeness. Section~\ref{sec:scaling} discusses scaling to ACC and a robotaxi, and Section~\ref{sec:limits} lists limitations.
+
+%=====================================================================
+\section{The SOTIF framework for quantitative validation}\label{sec:framework}
+ISO~21448 asks for the absence of unreasonable risk rather than absolute safety, and structures the argument around hazards, triggering conditions and residual risk \cite[Sec.~1.1, pp.~2--3]{schaller2026}. The clauses relevant here are:
+\begin{itemize}
+\item \textbf{Clause~6:} identification and evaluation of hazards; an acceptance criterion of the residual risk is determined for each hazard \cite[Sec.~2.1, p.~8]{schaller2026}.
+\item \textbf{Clause~9:} the verification and validation strategy, including validation targets, ``the system's minimum performance level that is to be shown during validation'' \cite[Sec.~2.1, p.~9]{schaller2026}.
+\item \textbf{Clauses~10 and~11:} evaluation of known and unknown hazardous scenarios. For unknown scenarios, the standard asks to demonstrate that the residual risk meets the acceptance criteria with sufficient confidence \cite[Sec.~2.1, p.~9]{schaller2026}.
+\item \textbf{Clause~12:} evaluation of whether the SOTIF objectives are achieved, as input to release \cite[Sec.~2.1, p.~9]{schaller2026}.
+\item \textbf{Clause~13:} operation-phase activities, centred on field monitoring \cite[Sec.~2.1, pp.~9--10]{schaller2026}.
+\item \textbf{Annex~C:} guidance on deriving validation targets and on validation \cite[Sec.~2.2, p.~10]{schaller2026}.
+\end{itemize}
+Acceptance criteria are justified by risk acceptance rationales such as ALARP, MEM, positive risk balance and GAMAB \cite[Sec.~III-B]{betschinske2025}.
+
+For L4 systems, ISO~21448 is complemented by:
+\begin{itemize}
+\item \textbf{ISO/TS~5083}, the ADS-level standard. Betschinske et al.\ quote its statement that, for L3, ``a similar amount of real-world test driving as for state-of-the-art L2 systems'' seems appropriate (ISO/TS~5083, p.~146, as cited in \cite[Sec.~I]{betschinske2025}), and argue that carrying the L2 derivation to higher levels gives infeasible targets \cite[Sec.~I]{betschinske2025}.
+\item \textbf{ANSI/UL~4600}, which defines safety performance indicators (Sec.~\ref{sec:spi}) (UL~4600 Ch.~16, as cited in \cite[Sec.~2]{ratiu2024} and \cite[slide~12]{koopman2022}).
+\item \textbf{The UNECE NATM multi-pillar approach} (audit, simulation, track, real-world testing, in-service monitoring; ECE/TRANS/WP.29/2021/61), on which Commission Implementing Regulation (EU)~2022/1426 builds \cite[web article, no sections]{siemensnatm}.
+\end{itemize}
+
+%=====================================================================
+\section{From acceptance criterion to validation target}\label{sec:vt}
+\subsection{Decomposition of the acceptance criterion}
+ISO~21448 Annex~C.2 factorises the acceptance criterion $A_H$ for a harm $H$ as
+\begin{equation}
+A_H = \RHB \cdot P(E\mid \mathrm{HB}) \cdot P(\bar C\mid E)\cdot P(S\mid \bar C)
+\label{eq:annexc}
+\end{equation}
+(Annex~C.2, as rendered in \cite[Sec.~IV-B(a), Eq.~(1)]{putze2023} and \cite[Sec.~V, Eqs.~(6)--(7)]{betschinske2025}). Here $\RHB$ is the rate of the hazardous behaviour, $P(E\mid\mathrm{HB})$ the probability of the exposing scenario, $P(\bar C\mid E)$ the probability of non-controllability and $P(S\mid\bar C)$ the probability of the severity. Solving for $\RHB$ gives the tolerable hazardous-behaviour rate.
+
+Putze et al.\ raise three objections \cite[Sec.~IV-B(b)]{putze2023}:
+\begin{enumerate}
+\item A correct chain-rule decomposition needs further conditioning, e.g.\ $P(S\mid \bar C, E, \mathrm{HB})$ instead of $P(S\mid\bar C)$.
+\item Annex~C.2.1 omits the aggregation over several hazardous behaviours leading to the same harm, without flagging this as a simplification.
+\item Field-data quantities are not system-independent: exposure depends on route planning and the ODD; their example is the probability of a truck in front \cite[Sec.~IV-B(c)]{putze2023}.
+\end{enumerate}
+They therefore bound the harm probability over triples of triggering condition $T$, behaviour $B$ and event $E$:
+\begin{equation}
+P(H) \le \sum_{T,B,E} P(T)\,P(B\mid T)\,P(E\mid B,T)\,P(H\mid E,B,T)
+\label{eq:bonf}
+\end{equation}
+\cite[Sec.~IV-B(b), Eq.~(2); severity-stratified form Eq.~(3)]{putze2023}, and conclude that ``it is not sufficient to derive a single validation target'' \cite[Sec.~IV-B(b), last paragraph]{putze2023}.
+
+\subsection{The zero-failure test}
+Assuming hazardous behaviours arrive as a Poisson process, the exposure $\tau$ needed to show $\text{rate}\le\RHB$ at confidence $C$ with no observed event is
+\begin{equation}
+\tau = \frac{-\ln(1-C)}{\RHB}
+\label{eq:tau}
+\end{equation}
+(Annex~C, as rendered in \cite[Sec.~IV-B(a)]{putze2023}; real-world driving requirement of Annex~C.3, ISO~21448 p.~137, as cited in \cite[Sec.~III-C, Eq.~(5)]{betschinske2025}). Betschinske et al.\ write the test as $H_0\!: R > A_H$ against $H_1\!: R\le A_H$ with the type-I error bound $P(X\le k)\le\alpha$, $\lambda = A_H\tau_k$ \cite[Sec.~III-C, Eqs.~(3)--(4)]{betschinske2025}.
+
+\textbf{Notation trap.} In Putze et al.\ $\alpha$ denotes the confidence level \cite[Sec.~IV-B(a)]{putze2023}; in Betschinske et al.\ $\alpha$ is the type-I error, so their Eq.~(5) reads $-\ln(\alpha)/A_H$ \cite[Sec.~III-C, Eq.~(5)]{betschinske2025}. This report writes $C$ for confidence throughout.
+
+At $C=0.95$, $-\ln 0.05\approx 3.00$ (the ``rule of three''). Kalra and Paddock use the per-mile form $n=\ln(1-C)/\ln(R)$ with reliability $R=1-F$ \cite[Sec.~1, p.~3, Eq.~2]{kalra2016}. With the US fatality rate of 1.09 per 100 million miles in 2013 \cite[Introduction, p.~2]{kalra2016}, this gives 275 million failure-free miles, or about 12.5 years for 100 vehicles driving 24/7 at 25~mph \cite[Sec.~1, p.~3; Table~1, p.~10]{kalra2016}. Demonstrating a fatality rate 20\% below the human rate with 95\% confidence and 80\% power takes more than 11 billion miles, about 518 years \cite[Sec.~3, p.~8]{kalra2016}.
+
+Schaller et al.\ give the example criterion ``overlooking a car on the other lane is at most $10^{-9}$ per hour'', the order of magnitude used in civil aviation for extremely improbable failure conditions, and call the testing needed to prove it prohibitive \cite[Sec.~5.1, p.~14]{schaller2026}. Equation~\eqref{eq:tau} gives $3.0\times10^{9}$~h, about 342{,}000 vehicle-years of 24/7 operation \own{Sec.~\ref{sec:vt}}.
+
+\subsection{Plans that allow \texorpdfstring{$k$}{k} events}
+If the plan allows $k$ events, the pass condition $P(X\le k\mid\lambda)\le 1-C$ is solved by
+\begin{equation}
+\tau_k = \frac{\lambda_k(C)}{\RHB},\qquad \lambda_k(C)=\tfrac12\,\chi^2_{2(k+1)}(C),
+\label{eq:chi2}
+\end{equation}
+the classical relation between Poisson confidence limits and the $\chi^2$ distribution \cite[location not verified]{garwood1936}. Table~\ref{tab:lambda} gives the factors \own{computed with SciPy}.
+
+\begin{table}[H]
+\centering\small
+\caption{Factors $\lambda_k(C)$ for plans allowing $k$ events \own{computed}.}
+\label{tab:lambda}
+\begin{tabular}{lrrrrrr}
+\toprule
+$C$ \textbackslash{} $k$ & 0 & 1 & 2 & 3 & 4 & 5\\
+\midrule
+0.90 & 2.303 & 3.890 & 5.322 & 6.681 & 7.994 & 9.275\\
+0.95 & 2.996 & 4.744 & 6.296 & 7.754 & 9.154 & 10.513\\
+0.99 & 4.605 & 6.638 & 8.406 & 10.045 & 11.605 & 13.108\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$k$ and $\tau$ must be fixed before testing: under classical hypothesis testing, the test cannot be extended after a failure without inflating the type-I error \cite[Sec.~III-C, item~6]{betschinske2025}. Raising $C$ from 0.95 to 0.99 multiplies $\tau$ by $\ln 0.01/\ln 0.05 = 1.54$; allowing $k=1$ at $C=0.95$ multiplies it by 1.58 \own{Table~\ref{tab:lambda}}.
+
+\subsection{What a passed test silently assumes}
+\begin{enumerate}
+\item \textbf{Homogeneous Poisson process}: constant rate and independent events (the Poisson assumption in \cite[Sec.~IV-B(a)]{putze2023}).
+\item \textbf{Representative exposure}: the tested mix of conditions equals the deployed mix; the factors in Eq.~\eqref{eq:annexc} are system-dependent \cite[Sec.~IV-B(b)--(c)]{putze2023}.
+\item \textbf{Frozen software}: a fix invalidates earlier hours unless carry-over is argued; reusing earlier systems' data is a main validity gap \cite[Sec.~V, RA ``Decomposition of Hazardous Behavior'' and ``Bayesian Statistics'']{betschinske2025}.
+\item \textbf{One behaviour per harm}: otherwise rates add, Eq.~\eqref{eq:bonf} \cite[Sec.~IV-B(b)]{putze2023}. Aggregating separately validated terms gives a joint confidence of at least $1-(\alpha_1+\alpha_2)$ (ISO~21448 p.~165, as cited in \cite[Sec.~V, RA ``Decomposition of Hazardous Behavior'']{betschinske2025}).
+\item \textbf{Frequentist meaning}: a system exactly at the limit passes with probability at most $1-C$; a posterior statement needs a prior. The flat prior Gamma$(1,0)$ reproduces the base model, Jeffreys' Gamma$(0.5,0)$ lowers the requirement \cite[Sec.~V, RA ``Bayesian Statistics'']{betschinske2025}.
+\end{enumerate}
+
+\subsection{Ways to reduce the effort}
+Betschinske et al.\ review reduction approaches. Sequential testing (Wald's SPRT) allows optional stopping only if both hypotheses are set at or stricter than the acceptance threshold, $\theta_0,\theta_1\ge\theta_{A_H}$, and gives a reduction only if $\beta>1-c$ with $c=\tfrac{\theta_0}{\theta_1}\alpha^{\theta_0/\theta_1}$ \cite[Sec.~V, RA ``Sequential Testing'', Eqs.~(14)--(15)]{betschinske2025}. Further approaches are decomposition of the hazardous behaviour \cite[Sec.~V, Eqs.~(8)--(9)]{betschinske2025}, high-yield route profiles with importance-sampling correction \cite[Sec.~V, RA ``High Yield Route Profiles'', Fig.~12]{betschinske2025}, extreme value analysis \cite[Sec.~V, RA ``Extreme Value Analysis'', Table~IX]{betschinske2025} and scenario-based testing \cite[Sec.~V, RA ``Scenario Based Testing'', Table~XI]{betschinske2025}. Direct mileage-based validation of upper bounds on harm probability is not feasible for ADS \cite[Sec.~IV-A(b), citing Wachenfeld and Winner]{putze2023}, and a residual dependence on field testing is likely to remain \cite[Sec.~VII]{betschinske2025}.
+
+%=====================================================================
+\section{Scenario-based residual risk}\label{sec:scenario}
+\subsection{Direction of the calculation}
+A HARA is built from the system outward: hazardous behaviour, hazardous event, scenarios. Probability flows the other way: the world produces situations at some rate, and the system responds with a hazardous behaviour or not. For the risk calculation the scenario is the random variable and the behaviour is conditioned on it. Logical scenarios must partition the ODD; overlapping scenarios double-count exposure, and then only the bound \eqref{eq:bonf} holds \cite[Sec.~IV-B(b), Eq.~(2)]{putze2023}.
+
+\subsection{The estimator}
+For a severity class $s$ and logical scenarios $\ell$ with exposure $\nu_\ell$ (occurrences or time share per operating hour) and parameter distribution $f_\ell(\theta)$:
+\begin{equation}
+R_s=\sum_\ell \nu_\ell\,p_{\ell,s},\qquad p_{\ell,s}=\int P(\mathrm{HB}\mid\theta,\ell)\,P(S\ge s\mid\mathrm{HB},\theta,\ell)\,f_\ell(\theta)\,d\theta .
+\label{eq:risk}
+\end{equation}
+De Gelder computes risk in the same spirit, by combining the outcome of virtual simulations with the estimated likelihood of scenarios, and decomposes it into exposure, crash probability and severity \cite[Ch.~1 and Ch.~7, Secs.~7.3.2, 7.3.4, 7.3.5]{degelder2022}. From $N$ concrete runs drawn from a test distribution $q_\ell$, the importance-sampling estimator is
+\begin{equation}
+\hat p_{\ell,s}=\frac1N\sum_{i=1}^N w_i h_i,\qquad w_i=\frac{f_\ell(\theta_i)}{q_\ell(\theta_i)},\qquad \mathrm{ESS}=\frac{(\sum_i w_i)^2}{\sum_i w_i^2}
+\label{eq:is}
+\end{equation}
+(importance sampling and effective sample size: \cite[Ch.~9]{owen2013}). Zhao et al.\ apply importance sampling with cross-entropy-optimised proposals to lane-change scenarios from naturalistic data and report acceleration factors of about 2{,}000 to 20{,}000 \cite[Abstract]{zhao2017}.
+
+\subsection{Counting critical runs is not a risk estimate}
+Figure~\ref{fig:toy} shows why. In a toy cut-in model, a uniform test design puts 5.4\% of its runs in the failure region, while the real-world probability of failure per cut-in is $4.9\times10^{-5}$ \own{Fig.~\ref{fig:toy}\synthetic}. Non-critical runs are evidence too. Falsification and criticality search find triggering conditions (Clause~10), but do not estimate risk unless $q$ is known. Figure~\ref{fig:conv} shows importance sampling converging long before plain Monte Carlo sees its first collision.
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f01_toy_cutin.pdf}
+\caption{Toy cut-in\synthetic: test runs of a uniform design against the real-world density. 5.4\% of runs are critical; the real-world failure probability is $4.9\times10^{-5}$ \own{computed}.}
+\label{fig:toy}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f02_convergence.pdf}
+\caption{Running estimate of $P(\text{collision}\mid\mathrm{HB})$ for one logical scenario\synthetic: plain Monte Carlo versus importance sampling, against a 200{,}000-run reference of 0.0157 \own{computed}.}
+\label{fig:conv}
+\end{figure}
+
+\subsection{Relation to validation targets}
+The single target $\tau$ of Eq.~\eqref{eq:tau} is replaced by one claim with several evidence targets:
+\begin{equation}
+\sum_\ell \nu_\ell^{U}\,p_{\ell,s}^{U} + R^{U}_{\text{unknown}}\le A_s \quad\text{at confidence } C,\qquad \sum_i (1-C_i)\le 1-C,
+\label{eq:claim}
+\end{equation}
+where superscript $U$ marks upper confidence bounds and the confidence budget is split by Bonferroni's inequality.
+
+\begin{table}[H]\centering\small
+\caption{Evidence targets that replace the single field-test target.}
+\label{tab:evidence}
+\begin{tabular}{L{2.6cm}L{8.3cm}L{3.4cm}}
+\toprule
+Term & Validation target & Measured in\\\midrule
+$\nu_\ell^U$ & enough naturalistic data per scenario class (Poisson bound on counts) & hours of ODD data\\
+$f_\ell$ & estimation error of the fitted distribution below a threshold; de Gelder quantifies completeness via the expected approximation error of a KDE \cite[Ch.~3]{degelder2022} & scenario instances\\
+$p_\ell^U$ & upper bound per scenario; plain Monte Carlo with zero failures needs $N=3/p^*$ runs, so importance sampling is required & runs, ESS\\
+simulation credibility & real-versus-simulated agreement for the same $\theta$; NATM includes a credibility assessment framework \cite[web article]{siemensnatm} & proving ground, replays\\
+$R^U_{\text{unknown}}$ & field driving without unexplained HB, Eq.~\eqref{eq:tau} restricted to what the taxonomy misses & hours\\
+\bottomrule
+\end{tabular}
+\end{table}
+Scenario-based testing lacks a direct quantitative link to mileage and an agreed coverage threshold \cite[Sec.~V, RA ``Scenario Based Testing'', Table~XI]{betschinske2025}. It shrinks the field-testing target but does not remove it \cite[Sec.~VII]{betschinske2025}.
+
+\subsection{Parameterising logical scenarios}
+\begin{enumerate}
+\item Define the scenario type and its parameters, following the logical/concrete distinction of ISO~34502 \cite[location not verified]{iso34502}.
+\item Keep $\theta$ small (3--6 dimensions) by sensitivity analysis; Glasmacher et al.\ list parameter sensitivity analysis in simulation as data-driven evidence \cite[Sec.~III-D, Table~I]{glasmacher2024}.
+\item Mine instances from drive logs with a scenario tagger \cite[Secs.~III-A--III-C]{guo2023}; each detection gives one $\theta$ sample and one count towards $\nu$.
+\item Fit $f_\ell$: marginals plus copula (Sec.~\ref{sec:copula}) or kernel density estimation \cite[Ch.~3 and Ch.~6]{degelder2022}.
+\item Estimate $\hat\nu_\ell=n_\ell/T$ with a Poisson or Gamma interval.
+\item Check the partition: no instance may belong to two logical scenarios.
+\end{enumerate}
+
+\subsection{Where each conditional probability comes from}
+\begin{table}[H]\centering\small
+\caption{Sources of the terms in Eq.~\eqref{eq:risk}.}
+\begin{tabular}{L{2.4cm}L{6.6cm}L{5.4cm}}
+\toprule
+Quantity & Primary source & Caveat\\\midrule
+$\nu_\ell, f_\ell(\theta)$ & own fleet logs; public naturalistic data only if the ODD matches & system-dependent, e.g.\ exposure depends on routing and ODD \cite[Sec.~IV-B(b)--(c)]{putze2023}\\
+$P(\mathrm{HB}\mid\theta)$ & simulation with a perception error model learned from labelled field data; runtime monitors flag near-failure situations \cite[Sec.~6.2, pp.~16--17]{schaller2026} & simulation fidelity is limited \cite[Sec.~V, RA ``Simulation-based Testing'']{betschinske2025}\\
+$P(\bar C\mid E)$ & for L4: evasion by other road users, via reactive agent models, or 1 & an assumption to justify\\
+$P(S\mid\mathrm{HB},\theta)$ & simulated $\Delta v$ and impact angle, then an injury-risk curve, e.g.\ an omni-directional injury model \cite[web page]{waymoinjury} & carry the curve's confidence band\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%=====================================================================
+\section{Gaussian copula for scenario parameters}\label{sec:copula}
+\subsection{Definition}
+By Sklar's theorem, every joint distribution function can be written as $F(x_1,\dots,x_d)=C\big(F_1(x_1),\dots,F_d(x_d)\big)$ with a copula $C$ \cite[Sec.~2.3]{nelsen2006}. The Gaussian copula is $C_R(u)=\Phi_R\big(\Phi^{-1}(u_1),\dots,\Phi^{-1}(u_d)\big)$. Each scenario parameter keeps its own marginal, and the correlation matrix $R$ alone sets the dependence.
+
+\subsection{Sampling and density}
+Sampling: $\varepsilon\sim\mathcal N(0,I)$, $Z=L\varepsilon$ with $R=LL^\top$, $U_i=\Phi(Z_i)$, $X_i=F_i^{-1}(U_i)$. The copula density, needed for the weights in Eq.~\eqref{eq:is}, is
+\begin{equation}
+c_R(u)=|R|^{-1/2}\exp\!\Big(-\tfrac12 z^\top(R^{-1}-I)z\Big),\quad z=\Phi^{-1}(u),\qquad f(x)=c_R\big(F(x)\big)\prod_i f_i(x_i).
+\end{equation}
+
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{figures/f09_marginals.pdf}
+\caption{Marginals of the real-world model $f$ and the importance-sampling proposal $q$ used in Sec.~\ref{sec:example}\synthetic.}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{figures/f10_copula_scatter.pdf}
+\caption{Independent uniforms, the Gaussian copula with $\rho=-0.4$, and the same draws in physical units\synthetic.}
+\end{figure}
+
+\subsection{Fitting}
+Transform each parameter to pseudo-observations $u=\mathrm{rank}/(n+1)$ and normal scores $z=\Phi^{-1}(u)$, and estimate $R$ as their correlation matrix. Pairwise, Kendall's $\tau$ \cite[Ch.~5]{nelsen2006} converts to $\rho=\sin(\pi\tau/2)$ for elliptical copulas \cite[location not verified]{lindskog2003}. $R$ must be positive definite; pairwise estimates may need projection to the nearest correlation matrix.
+
+\subsection{Limitation: no tail dependence}
+For $\rho<1$ the Gaussian copula has zero upper tail dependence, whereas the $t$-copula with $\nu$ degrees of freedom has $\lambda_U=2\,t_{\nu+1}\!\big(-\sqrt{(\nu+1)(1-\rho)/(1+\rho)}\big)>0$ \cite[location not verified]{embrechts2003}. Joint extremes, such as a late reaction combined with weak braking, are therefore under-represented if real data show tail dependence (Fig.~\ref{fig:tail}).
+\begin{figure}[H]\centering
+\includegraphics[width=0.9\linewidth]{figures/f11_tail.pdf}
+\caption{Same correlation, different joint extremes\synthetic: 33 (Gaussian) versus 77 ($t$, $\nu=3$) draws in the top-1\% corner out of 20{,}000; independence would give about 2 \own{computed}.}
+\label{fig:tail}
+\end{figure}
+
+%=====================================================================
+\section{Worked example: unintended braking with 1{,}000 concrete scenarios}\label{sec:example}
+\subsection{Set-up}
+\textbf{Everything in this section is synthetic\synthetic.} Validation target: MAIS2+ injuries from rear-end collisions caused by unintended (phantom) braking $\le A_H=10^{-7}$/h, with 10\% reserved for unknown triggers, leaving a budget of $9\times10^{-8}$/h. The ODD is partitioned into 100 logical scenarios: 5 trigger contexts $\times$ 4 ego speed bands $\times$ 5 follower-headway classes. The hazardous-behaviour rate $\lambda$ depends on trigger and speed only, so 20 evidence cells serve 100 scenarios. Per logical scenario, 2{,}000 plain runs from $f$ and 10 importance-sampled runs from $q$ are simulated with a one-dimensional kinematic model ($\Delta t=0.01$~s); ego speed, follower headway, reaction time and deceleration are coupled by a Gaussian copula with $\rho(v,h)=0.25$, $\rho(h,T_r)=-0.30$, $\rho(T_r,a_f)=-0.40$. The illustrative injury curve is $P(\text{MAIS2+}\mid\Delta v)=1/(1+e^{-(\Delta v-45)/7})$, $\Delta v$ in km/h \own{App.~\ref{app:code}}.
+
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{figures/f13_trajectories.pdf}
+\caption{Two concrete scenarios with the same phantom brake\synthetic: contact with a short headway and a late, weak reaction; no contact otherwise.}
+\end{figure}
+
+\subsection{Checks of the importance sampling}
+On 200{,}000 proposal draws the mean weight is 0.996, and the IS estimate (0.0161) matches 100{,}000 plain runs (0.0157). Over the 1{,}000 concrete scenarios the mean weight is 0.98, weights range from $5\times10^{-4}$ to 67, 117 runs end in a collision, and the median ESS per logical scenario is 4.3 of 10 \own{Fig.~\ref{fig:w}}.
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{figures/f14_weights.pdf}
+\caption{Weights of the 1{,}000 runs and effective sample size per logical scenario\synthetic.}
+\label{fig:w}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f15_concrete_scatter.pdf}
+\caption{All 1{,}000 concrete scenarios\synthetic; collisions concentrate at short headway and late reaction.}
+\end{figure}
+
+\subsection{Results}
+\begin{figure}[H]\centering
+\includegraphics[width=0.9\linewidth]{figures/f16_verdict.pdf}
+\caption{Verdict\synthetic: point estimates $2.1\times10^{-8}$ (200{,}000 runs) and $1.5\times10^{-8}$/h (1{,}000 IS runs), Bayesian 95\% quantile $7.3\times10^{-8}$/h (passes), Bonferroni bound over 120 estimates $7.3\times10^{-7}$/h (fails) \own{computed}.}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{figures/f17_exposure.pdf}
+\caption{Exposure shares per factor\synthetic; scenario share = product (independence assumed).}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f18_hb.pdf}
+\caption{Hazardous-behaviour rate per evidence cell\synthetic: observed $k/h$ with exact 95\% interval, and the synthetic true rate.}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{figures/f19_coll_inj.pdf}
+\caption{Collision probability, mean $\Delta v$ and injury probability by speed band and headway\synthetic.}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{figures/f20_risk_share.pdf}
+\caption{Where the risk sits\synthetic: attribution from observed counts (left) against attribution with the true rates (right). With 0--4 events per cell, point-estimate attribution is largely Poisson noise.}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f03_pareto.pdf}
+\caption{Cumulative share of the point estimate over the 100 logical scenarios\synthetic; the top 10 carry 85\%.}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f04_posterior.pdf}
+\caption{Posterior of total risk with Jeffreys priors\synthetic, against point estimate, budget and Bonferroni bound. Jeffreys and flat priors as discussed in \cite[Sec.~V, RA ``Bayesian Statistics'']{betschinske2025}.}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=0.8\linewidth]{figures/f21_is_vs_mc.pdf}
+\caption{Per-scenario agreement of 10 IS runs with 2{,}000 plain runs\synthetic. 22 scenarios saw no collision in their 10 IS runs although plain Monte Carlo did.}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f12_copula_heat.pdf}
+\caption{Ratio of $P(\text{collision}\mid\mathrm{HB})$ with the Gaussian copula to the same model with independent parameters, 20{,}000 runs per cell\synthetic: 1.06 to 3.2.}
+\end{figure}
+
+\subsection{Evidence needed}
+Minimising total test hours $\sum_j \lambda_k G_j/B_j$ subject to $\sum_j B_j=B$, with $G_j$ the harm weight of cell $j$, gives $B_j\propto\sqrt{G_j}$ and $T_{\text{total}}=\lambda_k(\sum_j\sqrt{G_j})^2/B$ \own{Lagrange multiplier}. For the Bonferroni claim, 567{,}800~h are required against 73{,}500~h available (Fig.~\ref{fig:targets}).
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f05_evidence_targets.pdf}
+\caption{Replay hours per evidence cell, available versus required under the square-root allocation\synthetic.}
+\label{fig:targets}
+\end{figure}
+
+%=====================================================================
+\section{Field data, statistics and safety performance indicators}\label{sec:field}
+\subsection{Data to collect}
+\begin{table}[H]\centering\small
+\caption{Field data organised by the term of Eq.~\eqref{eq:risk} it feeds.}
+\begin{tabular}{L{2.8cm}L{7.4cm}L{4.2cm}}
+\toprule
+Feeds & Data & How\\\midrule
+exposure & hours and km with ODD tags per time step, including periods without any scenario & continuous signals plus map and weather lookup\\
+scenario distributions & every occurrence with its parameters & scenario tagger \cite[Sec.~III]{guo2023}\\
+HB rate & every brake request with its cause, plus suppressed near-HBs & event-triggered raw-data buffer\\
+perception error model & misses and false positives against labelled ground truth, by class, range, occlusion, weather & labelled samples\\
+outcomes & collisions with $\Delta v$, near-miss surrogates (min TTC, PET) & rear sensors, incident process\\
+responses & minimal-risk manoeuvres, remote assistance, monitor flags \cite[Sec.~4]{schaller2026} & system logs\\
+provenance & software hash, configuration, map version, calibration & attached to every hour\\
+\bottomrule
+\end{tabular}
+\end{table}
+Clause~13 lists, as examples of monitored information, incidents that caused harm, exceedances of safety-relevant thresholds, and observations that extend the knowledge of scenarios and conditions \cite[Sec.~2.1, p.~10]{schaller2026}.
+
+\subsection{Statistics}
+Rates are bounded with Eq.~\eqref{eq:chi2} per stratum and software version (Fig.~\ref{fig:rate}); binomial proportions with Clopper--Pearson bounds \cite[location not verified]{clopper1934}. Near misses can be extrapolated to crash frequencies with extreme value analysis: a generalised Pareto distribution is fitted to exceedances over a threshold \cite[Ch.~4]{coles2001}; Betschinske et al.\ review its use for validation and its open issues \cite[Sec.~V, RA ``Extreme Value Analysis'', Table~IX]{betschinske2025}.
+\begin{figure}[H]\centering
+\includegraphics[width=0.82\linewidth]{figures/f06_rate_bound.pdf}
+\caption{95\% upper bound on a rate against exposure for 0, 1, 2 observed events \own{Eq.~\eqref{eq:chi2}}.}
+\label{fig:rate}
+\end{figure}
+\begin{figure}[H]\centering
+\includegraphics[width=0.82\linewidth]{figures/f08_evt.pdf}
+\caption{Extreme-value extrapolation of synthetic minimum-TTC data\synthetic: the lowest 5\% are fitted with a generalised Pareto tail and extrapolated.}
+\end{figure}
+
+\subsection{Safety performance indicators}\label{sec:spi}
+UL~4600 defines: ``An SPI is a metric supported by evidence that uses a threshold comparison to condition a claim in a safety case'' (UL~4600, as cited in \cite[Sec.~2, ``UL4600'']{ratiu2024}), and states that ``relying solely on lagging indicators is not acceptable'' (UL~4600 note 16.2.2.6.2, as cited in \cite[Sec.~2]{ratiu2024}). Lagging indicators detect shortcomings from past events; leading indicators identify potential issues before losses, e.g.\ unexpected fail-safe activations \cite[Sec.~2]{ratiu2024}. Koopman contrasts KPIs (``how well do we drive'') with SPIs (``how often are we potentially unsafe'') \cite[slide~12]{koopman2022}, lists lagging SPIs \cite[slide~6]{koopman2022} and leading SPIs \cite[slide~7]{koopman2022}, and gives examples such as a false negative for more than $k$ consecutive frames and violations of a safe clearance limit \cite[slide~10]{koopman2022}. An SPI violation means its claim is violated, but a claim can be violated without its SPI firing \cite[Sec.~2; Sec.~3.1]{ratiu2024}. Responses range from updating the safety case and SPIs, through restricting operation (reduced speed, geofences) and updating the system, to grounding the fleet \cite[Sec.~3.3]{ratiu2024}.
+
+\begin{table}[H]\centering\small
+\caption{Example SPI register for unintended braking \own{Sec.~\ref{sec:example}}.}
+\begin{tabular}{L{1.7cm}L{5.2cm}L{3.8cm}L{3.6cm}}
+\toprule
+Type & SPI & Claim conditioned & Threshold\\\midrule
+lagging & rear-end collisions with ego struck, per h, by severity & overall target & $A_H$\\
+leading & unexplained brake requests per 1{,}000 h per trigger context & HB rate per context & $\lambda$ target, Fig.~\ref{fig:targets}\\
+leading & suppressed false-positive brake detections & margin before HB & trend alarm\\
+leading & rear TTC $<1.5$~s within 3~s after ego braking & $P(\text{coll}\mid\mathrm{HB})$ & simulation prediction\\
+safety case & share of time with follower $<1$~s & exposure assumption & $\chi^2$ test\\
+safety case & Kendall's $\tau$(headway, reaction) & copula assumption & CI contains assumed $\rho$\\
+safety case & rate of unclassifiable scenarios & reserve $\varepsilon$ & Eq.~\eqref{eq:unk}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The time an SPI needs to detect a doubling of its rate depends only on the expected count: for a one-sided exact Poisson test at $\alpha=0.05$ and power 0.8 it takes $\mu^*\approx 9.1$ expected events, so $T=\mu^*/\lambda$ \own{computed}. Lagging SPIs near the acceptance criterion would take decades to centuries for a 50-vehicle fleet (Fig.~\ref{fig:detect}).
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f07_detect.pdf}
+\caption{Fleet time to detect a 2$\times$ drift for 50 vehicles $\times$ 3{,}000~h/yr \own{computed}.}
+\label{fig:detect}
+\end{figure}
+
+%=====================================================================
+\section{L4 validation, the scenario database and completeness}\label{sec:l4}
+\subsection{Vehicle-level SOTIF strategy}
+\begin{table}[H]\centering\small
+\caption{Pillars of the vehicle-level strategy and the term they feed.}
+\begin{tabular}{L{5.4cm}L{2.4cm}L{6.4cm}}
+\toprule
+Pillar & SOTIF & Feeds\\\midrule
+ODD spec, HARA, triggering-condition analysis & Cl.~5--7 & $A_s$, HB/HE list, scenario taxonomy\\
+component V\&V: perception KPIs per ODD stratum, planner checks & Cl.~10 & perception error models\\
+scenario-based simulation from the database & Cl.~10 & $p_\ell$, coverage \cite[Sec.~6.2, pp.~16--17]{schaller2026}\\
+log replay, XiL, proving ground & Cl.~10 & $\lambda$ per context; sim-to-real bounds\\
+public-road exploration and FOT & Cl.~11 & $\nu$, $f$, $R_{\text{unknown}}$ \cite[Sec.~6.3, p.~17]{schaller2026}\\
+shadow mode, operation & Cl.~13 & SPIs \cite[Sec.~7, p.~18]{schaller2026}\\
+release argument & Cl.~12 & Eq.~\eqref{eq:claim} per harm\\
+\bottomrule
+\end{tabular}
+\end{table}
+The structure matches the NATM pillars of virtual, track and real-world testing, audit and in-service monitoring \cite[web article]{siemensnatm}. Schaller et al.\ show how a runtime monitor ensemble contributes evidence to Clauses~6, 9--11 and~13 without by itself establishing SOTIF compliance \cite[Sec.~1.2, p.~3; Secs.~5--7, pp.~14--18]{schaller2026}, and propose that the standard make explicit that residual risk can be quantified from a statistical argument over traffic situations sourced from monitoring data \cite[Sec.~8.2, p.~19]{schaller2026}.
+
+\subsection{What the scenario database contributes}
+\begin{enumerate}
+\item It makes ``known'' explicit: the taxonomy is the boundary between known and unknown scenarios.
+\item It holds the weights $\nu_\ell$ and $f_\ell(\theta)$, derived from recordings.
+\item It generates tests and keeps traceability from triggering condition to hazardous behaviour, hazardous event, requirement and test.
+\item It shows coverage per scenario $\times$ triggering condition $\times$ software version.
+\item It stores every run with $\theta$, $q(\theta)$, software hash and outcome, so risk can be recomputed after changes.
+\item It moves unknown to known: discovered types become categories.
+\end{enumerate}
+\begin{lstlisting}
+Recording(id, vehicle, sw_hash, map_ver, calib_state, route, hours, raw_uri)
+ExposureSlice(recording_id, t0, t1, odd_tags...)        -- denominators
+ScenarioCategory(id, version, tag_rule, param_schema, partition_key)
+Occurrence(id, recording_id, t0, t1, category_id, theta..., odd_tags, min_ttc, hb_flag)
+HazardLink(category_id, hb_id, he_id, triggering_condition_id)
+TestRun(id, category_id, theta..., q_density, platform, sw_hash, outcome, dv)
+\end{lstlisting}
+
+\subsection{From recordings to the database}
+Raw logs are turned into a reference world model by offline perception and labels, enriched with map, weather and ODD tags for every time step, tagged with actor activities and interactions, and converted into scenario occurrences with parameters read at defined anchor events. This is the tag-based pipeline of Guo et al.: preprocessing \cite[Sec.~III-A]{guo2023}, tagging of actor activities \cite[Sec.~III-B.1]{guo2023} and interactions \cite[Secs.~III-B.2, III-B.3]{guo2023}, and categorisation by tag combinations \cite[Sec.~III-C]{guo2023}, applied to the Waymo Open Motion Dataset and CARLA data \cite[Sec.~IV]{guo2023}. Four rules matter: extract with a reference world model, not the stack under test; tag every driven second; attach provenance and a pointer to the raw log window; version the taxonomy and re-tag historical data when it changes.
+
+\subsection{Identifying scenarios automatically}
+\textbf{Known types.} Guo et al.\ report no incorrect extraction among 116 randomly examined of 215{,}090 extracted WOMD scenarios, but no precision or recall of individual tags \cite[Sec.~IV]{guo2023}. A tagger is a classifier, and its errors bias exposure. With measured precision and recall, $\hat\nu_\ell=n_{\text{detected}}\cdot\text{precision}/(\text{recall}\cdot T)$ \own{Fig.~\ref{fig:tagger}}.
+\begin{figure}[H]\centering
+\includegraphics[width=0.82\linewidth]{figures/f24_tagger.pdf}
+\caption{Synthetic cut-in tagger\synthetic: at 0.35~m/s it finds 82\% of real cut-ins, and 66\% of its detections are real \own{computed}.}
+\label{fig:tagger}
+\end{figure}
+\textbf{New types (Clause~11).} (1) A queue of unexplained critical events (low TTC, hard braking, HB flags, monitor flags, disengagements) that match no category, for human review; Schaller et al.\ propose monitors that flag novel input/output behaviour and unfamiliar activation patterns as candidates for hazard identification \cite[Sec.~5.1, pp.~14--15]{schaller2026}. (2) Unsupervised clustering of time-window embeddings with outlier flags \cite[Abstract]{unsupervised2022}. (3) ODD novelty: conditions outside the specification or rare tag combinations.
+
+\subsection{ODD tags: coverage and granularity}
+ISO~34503 specifies the ODD taxonomy \cite[location not verified]{iso34503} and ISO~34504 a tag-based scenario categorisation; ISO~34504 ``provides examples rather than instructions on its application and tags'' and does not fix values such as the speed difference in ``moving faster or slower'' \cite[web article]{tno2024}. Both are a shared vocabulary, not a sufficient resolution. Tags missing for a given function (overhead structures, road spray or low sun for phantom braking) are derived from the triggering-condition analysis and from structured environment models: Reich's SEM use guide phrases with an environment ontology to identify the environment factors that influence hazardous situations and their risks \cite[Sec.~1.3, p.~4]{reich2026}, giving a hazard-specific environment model with explicit coverage checks \cite[Sec.~1.4, contribution~1.1, p.~6; Sec.~4.1, p.~49]{reich2026}.
+
+\textbf{Granularity criterion.} A class may lump values together if a shift of the distribution inside the class cannot move the risk materially:
+\begin{equation}
+|\Delta R_c|=\nu_c\Big|\int_c p(\theta)\big(f^{\text{dep}}_c-f^{\text{test}}_c\big)d\theta\Big|\le \nu_c\,(p^{\max}_c-p^{\min}_c)\,\mathrm{TV}\big(f^{\text{dep}}_c,f^{\text{test}}_c\big)
+\end{equation}
+\own{derived}. Classes are refined until the sum over classes fits a reserved share $\delta$ of the budget. In the example, $P(\text{collision}\mid\mathrm{HB})$ falls from 0.137 to 0.030 inside the shortest headway class, while the 2--3~s class is flat (Fig.~\ref{fig:gran}).
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f23_granularity.pdf}
+\caption{$P(\text{collision}\mid\mathrm{HB})$ on a 0.1~s grid against current headway classes\synthetic.}
+\label{fig:gran}
+\end{figure}
+
+\textbf{Combinatorial coverage.} De Gelder et al.\ define tag-based coverage
+\begin{equation}
+\text{Coverage}_{\text{tag}}(n)=\frac{1}{n|L||C|}\sum_L\sum_C\min\big(n,N(L,C)\big)
+\end{equation}
+\cite[Sec.~III-A, Eq.~(1)]{degelder2024}, together with time-based, actor-based and actor-over-time coverage \cite[Secs.~III-B--III-D, Eqs.~(2)--(4)]{degelder2024}. On HighD with 10 categories and 18 tags, $\text{Coverage}_{\text{tag}}(10)=1$ \cite[Sec.~IV-B]{degelder2024}, while about 75\% of time instants are covered by at least one scenario \cite[Sec.~IV-C]{degelder2024}. Applied to tag pairs, the metric exposes untested combinations (Fig.~\ref{fig:pairs}).
+\begin{figure}[H]\centering
+\includegraphics[width=0.9\linewidth]{figures/f25_pair_coverage.pdf}
+\caption{Synthetic exposure hours per weather $\times$ road-type pair\synthetic: 26 of 42 pairs have fewer than 30~h; $\text{Coverage}_{\text{tag}}(30)=0.67$ \own{computed}.}
+\label{fig:pairs}
+\end{figure}
+
+\subsection{Arguing completeness}
+Glasmacher et al.\ argue the completeness of a scenario concept in goal structuring notation by testing counter-hypotheses \cite[Sec.~III-C; applied in Sec.~IV-B]{glasmacher2024}. They define completeness as binary and applying to the concept, and coverage as quantifiable and applying to parameter spaces and value assignments \cite[Secs.~III-A, III-B]{glasmacher2024}; evidence is knowledge-based or data-driven \cite[Sec.~III-D, Table~I]{glasmacher2024}. On inD they assign 59{,}253 base scenarios with no unassigned seconds and use saturation curves \cite[Sec.~IV-C, Fig.~5]{glasmacher2024}, noting that ``unforeseen scenarios cannot be identified with argumentation, but with external input'' \cite[Sec.~IV-C]{glasmacher2024} and that completeness claims can expire and need review in a dev-ops process \cite[Sec.~V]{glasmacher2024}. De Gelder et al.\ distinguish Type~I coverage (all relevant aspects of the ODD) from Type~II (all relevant aspects in the driving data) \cite[Sec.~III, Table~III]{degelder2024} and leave completeness metrics to future work \cite[Sec.~V]{degelder2024}. Hauer et al.\ \cite{hauer2019} estimate the number of scenario types not yet addressed in testing (as summarised in \cite[Sec.~II]{degelder2024}).
+
+Five legs of an argument follow:
+\begin{enumerate}
+\item construction: systematic derivation of the taxonomy, independent review;
+\item explained time: the share of driven time assigned to a category (Type~II coverage);
+\item saturation: a flattening discovery curve and small missing mass;
+\item risk-weighted remainder: bounded by Clause~11 field evidence within the reserve $\varepsilon A_H$;
+\item monitoring in operation, because completeness claims expire.
+\end{enumerate}
+For leg~3, the Good--Turing estimate of the probability that the next occurrence is of an unseen type \cite[location not verified]{good1953} and the Chao1 richness estimator \cite[location not verified]{chao1984} are
+\begin{equation}
+\hat M_0=\frac{f_1}{N},\qquad \hat S=S_{\text{obs}}+\frac{f_1(f_1-1)}{2(f_2+1)},\qquad R_{\text{unknown}}\lesssim \hat M_0\,\nu_{\text{tot}}\,\bar p_{\text{unk}}
+\label{eq:unk}
+\end{equation}
+with $f_1,f_2$ the numbers of types seen once or twice and $N$ the number of occurrences.
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{figures/f26_saturation.pdf}
+\caption{Synthetic: 1{,}000 scenario types with Zipf frequencies (exponent 1.8)\synthetic. After 200{,}000 occurrences, 731 types are seen and Chao1 estimates 902, a lower bound; the Good--Turing missing mass is $1.06\times10^{-3}$ (true $1.14\times10^{-3}$) \own{computed}.}
+\end{figure}
+
+\subsection{OpenLABEL and ISO 34504}
+\begin{table}[H]\centering\small
+\caption{ASAM OpenLABEL compared with ISO~34504.}
+\begin{tabular}{L{2.4cm}L{6.2cm}L{5.6cm}}
+\toprule
+& ASAM OpenLABEL 1.0.0 (2021) & ISO 34504:2024\\\midrule
+nature & data format (JSON schema) for annotations \cite[standard page]{asamopenlabel} & vocabulary and structure for scenario categories \cite[web article]{tno2024}\\
+content & elements (objects, actions, events, contexts, relations) with name, uid, type and ontology id \cite[Sec.~2.3.1]{openlabelconcept}; relations as RDF triples \cite[Sec.~2.3.4]{openlabelconcept}; frames and frame intervals \cite[Sec.~2.3.2]{openlabelconcept}; streams \cite[Sec.~2.3.6]{openlabelconcept}; coordinate systems \cite[Secs.~2.3.7, 3.1]{openlabelconcept} & tags for vehicle types, environments, light, weather, road conditions, grouped into categories; examples, no exact values \cite[web article]{tno2024}\\
+semantics & none of its own: elements point to external ontologies \cite[Sec.~2.3.3]{openlabelconcept} & a semantic source to point to\\
+scenario tags & labels selected from a pool and stored with scenario files for search \cite[Secs.~5.1--5.2]{openlabelconcept} & tags define the categories\\
+related & lists BSI PAS~1883 and ASAM OpenODD \cite[Sec.~1.3]{openlabelconcept} & part of the ISO 3450x family \cite[web article]{tno2024}\\
+\bottomrule
+\end{tabular}
+\end{table}
+They complement each other: ISO~34503/34504 plus custom tags form the ontology; OpenLABEL stores per-recording, per-interval annotations that reference it; the scenario database indexes them; OpenSCENARIO describes executable tests.
+
+%=====================================================================
+\section{Scaling to ACC and an L4 robotaxi}\label{sec:scaling}
+The estimator \eqref{eq:risk} does not change; the scenario space, the agent interaction and the cost of exploring rare regions do.
+\begin{table}[H]\centering\small
+\caption{Three levels compared \own{assessment}.}
+\begin{tabular}{L{2.6cm}L{3.4cm}L{3.8cm}L{4.4cm}}
+\toprule
+& unintended braking (Sec.~\ref{sec:example}) & ACC / L2 longitudinal & L4 urban robotaxi\\\midrule
+hazardous behaviours & 1 & about 5--10 & dozens across all DDT subtasks\\
+scenario types & 1 & follow, lead braking, cut-in, cut-out, queue approach & hundreds: intersections, occluded VRUs, pick-up/drop-off, emergency vehicles\\
+parameters & 7 & about 10--20 & about 50--100 and more\\
+interaction & open loop & closed loop, driver as fallback & closed loop, many reactive agents\\
+acceptance & one $A_H$ & per HE, human benchmark (Annex~C) & positive risk balance per harm type (ISO/TS~5083)\\
+\bottomrule
+\end{tabular}
+\end{table}
+ACC is specified in ISO~15622 \cite[location not verified]{iso15622}. With $d$ parameters shifted by $\delta$ standard deviations, a Gaussian proposal gives $E_q[w^2]=e^{d\delta^2}$ and $\mathrm{ESS}/N\approx e^{-d\delta^2}$ \own{derived; Fig.~\ref{fig:ess}}. Fixed-proposal importance sampling therefore degrades in high dimension, which motivates the cross-entropy method \cite[location not verified]{rubinstein2016}, subset simulation \cite[location not verified]{aubeck2001} and adaptive importance sampling \cite[Ch.~10]{owen2013}. Runtime risk models can restrict exposure to risky situations: SINADRA derives monitorable risk-implausibility hypotheses from HARA work products and turns them into Boolean or Bayesian-network runtime models \cite[Sec.~1.3, pp.~4--5; Sec.~4.3, p.~77]{reich2026}; in its urban case study, behaviour-intent likelihoods weight a collision-risk signal \cite[Sec.~5.2.5, p.~131]{reich2026}. Such a reduction of $\nu_\ell$ must be argued inside Eq.~\eqref{eq:risk}.
+\begin{figure}[H]\centering
+\includegraphics[width=0.86\linewidth]{figures/f22_ess_dim.pdf}
+\caption{Effective sample size of importance sampling against the number of shifted parameters \own{derived and simulated}.}
+\label{fig:ess}
+\end{figure}
+
+%=====================================================================
+\section{Limitations}\label{sec:limits}
+\begin{itemize}
+\item All example data are synthetic; correlations, rates, distributions and the injury curve are illustrative.
+\item ISO clause and page references were not checked against the standards themselves (Sec.~1.2).
+\item The kinematic model is one-dimensional, without lateral escape, brake build-up or reaction to brake release.
+\item Scenario shares are products of factor shares (independence between trigger, speed and headway).
+\item The Bayesian result depends on the prior, which must be defended to an assessor.
+\end{itemize}
+
+%=====================================================================
+\appendix
+\section{Code and reproduction}\label{app:code}
+All numbers marked \textit{this report} and all figures are reproducible from the repository \texttt{dfeldmann-bot/sotif-risk-course} (private): \texttt{tools/ub\_sim.py} (scenario generation, copula, simulation, weights), \texttt{tools/build\_ub\_example.py} (workbook with live formulas), \texttt{tools/build\_docs\_html.py} (figures and HTML docs) and \texttt{tools/gen\_report\_figs.py} (the figures of this report). Random seed: 2026.
+
+%=====================================================================
+\begingroup\small
+\begin{thebibliography}{99}
+\bibitem{iso21448} ISO 21448:2022. \emph{Road vehicles --- Safety of the intended functionality.} ISO, Geneva. Not accessed directly; see Sec.~1.2.
+\bibitem{iso34502} ISO 34502:2022. \emph{Road vehicles --- Test scenarios for automated driving systems --- Scenario based safety evaluation framework.} ISO.
+\bibitem{iso34503} ISO 34503:2023. \emph{Road vehicles --- Test scenarios for automated driving systems --- Specification for operational design domain.} ISO.
+\bibitem{iso15622} ISO 15622. \emph{Intelligent transport systems --- Adaptive cruise control systems --- Performance requirements and test procedures.} ISO.
+\bibitem{tno2024} TNO (2024). New ISO 34504 provides guidance for safety assessment of automated driving systems. \url{https://www.tno.nl/en/newsroom/insights/2024/05/iso-34504-safety-and-automated-driving/}
+\bibitem{asamopenlabel} ASAM e.V. (2021). ASAM OpenLABEL 1.0.0. \url{https://www.asam.net/standards/detail/openlabel/}
+\bibitem{openlabelconcept} ASAM e.V. OpenLABEL Concept Paper. \url{https://www.asam.net/fileadmin/Projects/Project-Details/P_2020_12_OpenLABEL_V1.0.0/OpenLABEL_Concept_paper.html}
+\bibitem{siemensnatm} Siemens Digital Industries Software. Multi-pillar approach for safety validation of automated vehicles (on UNECE NATM, ECE/TRANS/WP.29/2021/61, and Regulation (EU) 2022/1426). \url{https://blogs.sw.siemens.com/simcenter/multi-pillar-approach-for-safety-validation-of-automated-vehicles/}
+\bibitem{putze2023} L.~Putze, L.~Westhofen, T.~Koopmann, E.~Böde, C.~Neurohr (2023). On quantification for SOTIF validation of automated driving systems. arXiv:2304.10170.
+\bibitem{betschinske2025} D.~Betschinske, M.~Schrimpf, S.~Peters, K.~Klonecki, J.~P.~Karch, M.~Lippert (2025). Towards more efficient quantitative safety validation of residual risk for assisted and automated driving. arXiv:2506.10363.
+\bibitem{kalra2016} N.~Kalra, S.~M.~Paddock (2016). \emph{Driving to Safety: How Many Miles of Driving Would It Take to Demonstrate Autonomous Vehicle Reliability?} RAND Corporation, RR-1478-RC.
+\bibitem{schaller2026} F.~Schaller, R.~Ehlers, I.~Aslam, A.~Deshpande, R.~Gräfe, W.~Guedri, N.~Habib, N.~Maslov, A.~Rausch, S.~S.~Qutub, M.~Zhang (2026). Addressing SOTIF with a runtime monitor ensemble for AI-based perception systems. \emph{Discover Artificial Intelligence} 6:1172. doi:10.1007/s44163-026-02186-z.
+\bibitem{reich2026} J.~Reich (2026). \emph{SINADRA: Situation-Aware Dynamic Risk Assessment for Safe and Permissive Autonomous Systems.} Dr.-Ing. thesis, RPTU Kaiserslautern-Landau / Fraunhofer IESE. Page numbers as printed.
+\bibitem{degelder2022} E.~de Gelder (2022). \emph{Safety assessment of automated vehicles using real-world driving scenarios.} PhD thesis, TU Delft.
+\bibitem{degelder2024} E.~de Gelder, M.~Buermann, O.~Op den Camp (2024). Coverage metrics for a scenario database for the scenario-based assessment of automated driving systems. arXiv:2409.01139 (v2).
+\bibitem{glasmacher2024} C.~Glasmacher, H.~Weber, L.~Eckstein (2024). Towards a completeness argumentation for scenario concepts. arXiv:2404.01934.
+\bibitem{guo2023} D.~Guo, M.~Muñoz Sánchez, E.~de Gelder, T.~P.~J.~van der Sande (2023). Scenario extraction from a large real-world dataset for the assessment of automated vehicles. arXiv:2306.07815.
+\bibitem{unsupervised2022} Toward unsupervised test scenario extraction for automated driving systems from urban naturalistic road traffic data. arXiv:2202.06608.
+\bibitem{hauer2019} F.~Hauer, T.~Schmidt, B.~Holzmüller, A.~Pretschner (2019). Did we test all scenarios for automated and autonomous driving systems? \emph{IEEE ITSC 2019}.
+\bibitem{zhao2017} D.~Zhao, H.~Lam, H.~Peng, S.~Bao, D.~J.~LeBlanc, K.~Nobukawa, C.~S.~Pan (2016). Accelerated evaluation of automated vehicles safety in lane-change scenarios based on importance sampling techniques. arXiv:1605.04965; doi:10.1109/TITS.2016.2582208.
+\bibitem{ratiu2024} D.~Ratiu, T.~Rohlinger, T.~Stolte, S.~Wagner (2024). Towards an argument pattern for the use of safety performance indicators. arXiv:2410.00578.
+\bibitem{koopman2022} P.~Koopman (2022). Safety Performance Indicators (SPIs) for Autonomous Vehicles. Lecture slides, Carnegie Mellon University. \url{https://users.ece.cmu.edu/~koopman/lectures/L124_SPI_vs_KPI.pdf}
+\bibitem{waymoinjury} Waymo. An omni-directional model of injury risk in planar crashes. \url{https://waymo.com/research/an-omni-directional-model-of-injury-risk-in-planar/}
+\bibitem{garwood1936} F.~Garwood (1936). Fiducial limits for the Poisson distribution. \emph{Biometrika} 28:437--442.
+\bibitem{clopper1934} C.~J.~Clopper, E.~S.~Pearson (1934). The use of confidence or fiducial limits illustrated in the case of the binomial. \emph{Biometrika} 26:404--413.
+\bibitem{good1953} I.~J.~Good (1953). The population frequencies of species and the estimation of population parameters. \emph{Biometrika} 40:237--264.
+\bibitem{chao1984} A.~Chao (1984). Nonparametric estimation of the number of classes in a population. \emph{Scandinavian Journal of Statistics} 11:265--270.
+\bibitem{aubeck2001} S.-K.~Au, J.~L.~Beck (2001). Estimation of small failure probabilities in high dimensions by subset simulation. \emph{Probabilistic Engineering Mechanics} 16(4).
+\bibitem{lindskog2003} F.~Lindskog, A.~McNeil, U.~Schmock (2003). Kendall's tau for elliptical distributions. In \emph{Credit Risk}, Physica.
+\bibitem{embrechts2003} P.~Embrechts, F.~Lindskog, A.~McNeil (2003). Modelling dependence with copulas and applications to risk management. In \emph{Handbook of Heavy Tailed Distributions in Finance}, Elsevier.
+\bibitem{owen2013} A.~B.~Owen (2013). \emph{Monte Carlo theory, methods and examples.} Ch.~9 (importance sampling), Ch.~10 (advanced variance reduction). \url{https://artowen.su.domains/mc/}
+\bibitem{nelsen2006} R.~B.~Nelsen (2006). \emph{An Introduction to Copulas}, 2nd ed. Springer.
+\bibitem{coles2001} S.~Coles (2001). \emph{An Introduction to Statistical Modeling of Extreme Values.} Springer.
+\bibitem{rubinstein2016} R.~Y.~Rubinstein, D.~P.~Kroese (2016). \emph{Simulation and the Monte Carlo Method}, 3rd ed. Wiley.
+\end{thebibliography}
+
+\subsection*{Further reading: statistics books}
+\begin{itemize}
+\item L.~Wasserman (2004). \emph{All of Statistics.} Springer. Compact rigorous inference; a good first book.
+\item G.~Casella, R.~L.~Berger (2002). \emph{Statistical Inference}, 2nd ed. Duxbury. Estimators, confidence intervals, tests.
+\item W.~Q.~Meeker, G.~J.~Hahn, L.~A.~Escobar (2017). \emph{Statistical Intervals}, 2nd ed. Wiley. Exact Poisson and binomial intervals, demonstration tests (chapter not verified).
+\item M.~Rausand, A.~Barros, A.~Høyland (2020). \emph{System Reliability Theory}, 3rd ed. Wiley. Failure rates and Bayesian reliability (chapter not verified).
+\item A.~Gelman et al.\ (2013). \emph{Bayesian Data Analysis}, 3rd ed. CRC. Priors and posteriors; Ch.~2 single-parameter models including the Poisson model. Free PDF: \url{https://sites.stat.columbia.edu/gelman/book}
+\item A.~B.~Owen (2013), see \cite{owen2013}: Ch.~9 for importance sampling diagnostics and effective sample size.
+\item C.~P.~Robert, G.~Casella (2004). \emph{Monte Carlo Statistical Methods}, 2nd ed. Springer.
+\item R.~Y.~Rubinstein, D.~P.~Kroese (2016), see \cite{rubinstein2016}: rare events and the cross-entropy method.
+\item R.~B.~Nelsen (2006), see \cite{nelsen2006}: Sec.~2.3 Sklar's theorem; Ch.~5 dependence and Kendall's $\tau$.
+\item H.~Joe (2014). \emph{Dependence Modeling with Copulas.} CRC. Vine copulas (chapter not verified).
+\item S.~Coles (2001), see \cite{coles2001}: Ch.~4 threshold models and the generalised Pareto distribution.
+\end{itemize}
+\endgroup
+\end{document}
