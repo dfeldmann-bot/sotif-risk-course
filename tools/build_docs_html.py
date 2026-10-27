@@ -760,8 +760,8 @@ def scenario_db_body(fg, ft, fp, fs):
     return f"""
 <p>How to validate an L4 system for SOTIF at vehicle level, what a scenario database contributes, how recordings feed it, how scenarios are identified automatically, how fine the ODD tags must be, and how to argue completeness. Plots use synthetic data.</p>
 
-<h2>1 · The vehicle-level SOTIF strategy for L4</h2>
-<p>ISO 21448 divides scenarios into known safe, known unsafe, unknown unsafe and unknown safe areas. Validation shows that the known-unsafe and unknown-unsafe areas carry acceptable residual risk. For L4, complement it with ISO/TS 5083 (positive risk balance), UL 4600 (SPIs, safety case) and, for EU type approval, the UNECE NATM pillars (audit, simulation, track, real world, in-service monitoring; ECE/TRANS/WP.29/2021/61, Regulation (EU) 2022/1426).</p>
+<h2>1 · The vehicle-level V&amp;V strategy for L4</h2>
+<p>Terminology: ISO 21448 reserves “vehicle-level SOTIF strategy” (VLSS) for a set of vehicle-level <i>requirements</i>, verified according to the Clause 9 V&amp;V strategy (3.34, p. 10; D.1, p. 159). What follows is that Clause 9 strategy. ISO 21448 divides scenarios into known not hazardous (area 1), known hazardous (2), unknown hazardous (3) and unknown not hazardous (4) areas (4.2.2, pp. 12–14). Validation shows that the known-unsafe and unknown-unsafe areas carry acceptable residual risk. For L4, complement it with ISO/TS 5083 (ADS level; positive risk balance is already a rationale in ISO 21448 6.5, p. 30), UL 4600 (SPIs, safety case) and, for EU type approval, the UNECE NATM pillars (audit, simulation, track, real world, in-service monitoring; ECE/TRANS/WP.29/2021/61, Regulation (EU) 2022/1426).</p>
 <div class="tbl-wrap"><table class="doc"><thead><tr><th>Pillar</th><th>SOTIF</th><th>What it shows</th><th>Feeds</th></tr></thead><tbody>
 <tr><td>ODD spec, HARA, triggering-condition analysis</td><td>Cl. 5–7</td><td>what can go wrong, where</td><td>\\(A_s\\), HB/HE list, taxonomy</td></tr>
 <tr><td>Component V&amp;V (perception KPIs per ODD stratum, planner checks)</td><td>Cl. 10</td><td>component insufficiencies</td><td>perception error models</td></tr>

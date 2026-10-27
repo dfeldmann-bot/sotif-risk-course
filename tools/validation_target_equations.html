@@ -24,7 +24,7 @@ td:first-child,th:first-child{text-align:left;font-family:"Source Serif 4",Georg
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)']]},svg:{fontCache:'global'}};</script>
 <script defer src='https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js'></script>
 </head><body><main>
-<p class='meta'>SOTIF Risk Course · Lesson 1 · generated 2026-10-20</p>
+<p class='meta'>SOTIF Risk Course · Lesson 1 · generated 2026-10-27</p>
 <h1>Validation target equations</h1>
 <p>From acceptance criterion to required test exposure under ISO 21448. Worked numbers use the inputs below; regenerate with your own values via the command-line flags.</p>
 <table><tr><th>Input</th><th>Value</th></tr>
@@ -44,7 +44,7 @@ td:first-child,th:first-child{text-align:left;font-family:"Source Serif 4",Georg
 <div class='tex'>\[A_H = R_{HB}\cdot P(E\mid HB)\cdot P(\bar C\mid E)\cdot P(S\mid \bar C)\]</div>
 <p>The harm rate is the hazardous-behaviour rate multiplied by the chance it meets an exposing scenario, is not controlled, and reaches severity S.</p>
 <div class='worked'>\[A_H = 1.00\times 10^{-7}\ \mathrm{h^{-1}},\quad P(E\mid HB)=0.1,\ P(\bar C\mid E)=0.5,\ P(S\mid\bar C)=0.2\]</div>
-<p class='src'>Source: ISO 21448:2022 Annex C.2, as rendered by Putze et al. 2023 (arXiv:2304.10170)</p>
+<p class='src'>Source: ISO 21448:2022, C.2.1, Formula (C.1), p. 127; critique: Putze et al. 2023 (arXiv:2304.10170), Sec. IV-B</p>
 </div>
 <div class='eq'>
 <h3><span class='n'>(2)</span>Tolerable hazardous-behaviour rate</h3>
@@ -64,7 +64,7 @@ td:first-child,th:first-child{text-align:left;font-family:"Source Serif 4",Georg
 <h3><span class='n'>(4)</span>Poisson model for hazardous behaviours</h3>
 <div class='tex'>\[P(X = n \mid \lambda) = \frac{\lambda^{n} e^{-\lambda}}{n!},\qquad \lambda = R\,\tau\]</div>
 <p>Expected count after τ hours of exposure at constant rate R (homogeneous Poisson process).</p>
-<p class='src'>Source: Standard; Annex C.3 per Betschinske et al. 2025</p>
+<p class='src'>Source: ISO 21448:2022, C.3, Example 3 (Poisson stopping rule), p. 137</p>
 </div>
 <div class='eq'>
 <h3><span class='n'>(5)</span>Hypotheses</h3>
@@ -81,9 +81,9 @@ td:first-child,th:first-child{text-align:left;font-family:"Source Serif 4",Georg
 <div class='eq'>
 <h3><span class='n'>(7)</span>Validation target (k = 0)</h3>
 <div class='tex'>\[\tau = \frac{-\ln(1-C)}{R_{HB}}\]</div>
-<p>Required failure-free exposure. Notation: Putze et al. write α for the confidence C; Betschinske et al. write α for 1 − C, so their form is −ln(α)/A_H.</p>
+<p>Required failure-free exposure. Notation: ISO 21448 Formula (C.7) and Putze et al. write α for the confidence C; ISO 21448 C.6.3.2 and Betschinske et al. use α for 1 − C, so their form is −ln(α)/A_H.</p>
 <div class='worked'>\[\tau = \frac{-\ln(1-0.95)}{1.00\times 10^{-5}} = \frac{2.9957}{1.00\times 10^{-5}} = 2.996\times 10^{5}\ \mathrm{h}\]</div>
-<p class='src'>Source: ISO 21448 Annex C (per Putze et al. 2023); Betschinske et al. 2025, Eq. 5</p>
+<p class='src'>Source: ISO 21448:2022, C.3, Formula (C.7), p. 137 (α = confidence there); Betschinske et al. 2025, Sec. III-C, Eq. 5 (α = type-I error)</p>
 </div>
 <div class='eq'>
 <h3><span class='n'>(8)</span>Rule of three</h3>

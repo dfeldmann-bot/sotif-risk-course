@@ -72,9 +72,10 @@ This report collects, in one place, the quantitative chain needed to argue that 
 The report supports a SOTIF engineer who must build and defend the quantitative part of a residual-risk argument for a Level~4 system. It covers the statistics behind validation targets, scenario-based risk estimation, the data that feeds it, and how the pieces fit into a vehicle-level validation strategy. It does not cover ISO~26262 hardware metrics or cybersecurity.
 
 \subsection{How sources are cited}
-Citations give the location inside the source in square brackets, for example \cite[Sec.~IV-B, Eq.~(1)]{putze2023} or \cite[p.~3, Eq.~2]{kalra2016}. The locations were checked against the source texts in October 2026. Three conventions apply:
+Citations give the location inside the source in square brackets, for example \cite[Sec.~IV-B, Eq.~(1)]{putze2023} or \cite[p.~3, Eq.~2]{kalra2016}. Every location was checked twice against the source texts in October 2026, the second time by verbatim quotation. Four conventions apply:
 \begin{itemize}
-\item \textbf{Standards.} The ISO standards themselves were not available to the author of this report. Clause, annex and page references to ISO~21448, ISO/TS~5083 and UL~4600 are therefore taken from the secondary source named in the same citation, for example ``ISO~21448, Annex~C.3, p.~137, as cited in \cite[Sec.~III-C]{betschinske2025}''. Check them against a licensed copy before relying on them.
+\item \textbf{ISO 21448.} All references to ISO~21448 were checked directly against ISO~21448:2022(E), first edition 2022-06, and give clause, formula, figure or table and the page number as printed in the standard, e.g.\ \cite[C.3, Formula (C.7), p.~137]{iso21448}.
+\item \textbf{Other standards.} ISO/TS~5083 and UL~4600 were not available; their clause and page references are taken from the secondary source named in the same citation, e.g.\ ``ISO/TS~5083, p.~146, as cited in \cite[Sec.~I]{betschinske2025}''.
 \item \textbf{Location not verified.} Where only the source, not the location, could be checked, the citation says so.
 \item \textbf{Own results.} Numbers computed for this report are marked \own{Sec.~x / Fig.~y}. All example data are synthetic, marked \synthetic, and describe no real system. The code that produces them is listed in Appendix~\ref{app:code}.
 \end{itemize}
@@ -84,20 +85,23 @@ Section~\ref{sec:framework} summarises the SOTIF framework for quantitative vali
 
 %=====================================================================
 \section{The SOTIF framework for quantitative validation}\label{sec:framework}
-ISO~21448 asks for the absence of unreasonable risk rather than absolute safety, and structures the argument around hazards, triggering conditions and residual risk \cite[Sec.~1.1, pp.~2--3]{schaller2026}. The clauses relevant here are:
+ISO~21448 defines the SOTIF as the absence of unreasonable risk due to hazards resulting from functional insufficiencies of the intended functionality or its implementation \cite[3.25, p.~8]{iso21448}. The scenarios of the relevant use cases are classified into four areas: known not hazardous (area~1), known hazardous (area~2), unknown hazardous (area~3) and unknown not hazardous (area~4); the goal is to reduce areas~2 and~3 to an acceptable level, area~3 through the V\&V strategy of Clauses~9 and~11 \cite[4.2.2, Figures~5--6, pp.~12--14]{iso21448}. The standard stresses that the size of the areas represents the number of scenarios, not the risk, and is not measurable \cite[4.2.2, Notes~2--3, p.~14]{iso21448}. The clauses relevant here are:
 \begin{itemize}
-\item \textbf{Clause~6:} identification and evaluation of hazards; an acceptance criterion of the residual risk is determined for each hazard \cite[Sec.~2.1, p.~8]{schaller2026}.
-\item \textbf{Clause~9:} the verification and validation strategy, including validation targets, ``the system's minimum performance level that is to be shown during validation'' \cite[Sec.~2.1, p.~9]{schaller2026}.
-\item \textbf{Clauses~10 and~11:} evaluation of known and unknown hazardous scenarios. For unknown scenarios, the standard asks to demonstrate that the residual risk meets the acceptance criteria with sufficient confidence \cite[Sec.~2.1, p.~9]{schaller2026}.
-\item \textbf{Clause~12:} evaluation of whether the SOTIF objectives are achieved, as input to release \cite[Sec.~2.1, p.~9]{schaller2026}.
-\item \textbf{Clause~13:} operation-phase activities, centred on field monitoring \cite[Sec.~2.1, pp.~9--10]{schaller2026}.
-\item \textbf{Annex~C:} guidance on deriving validation targets and on validation \cite[Sec.~2.2, p.~10]{schaller2026}.
+\item \textbf{Clause~6:} acceptance criteria are specified for the risks associated with each hazardous behaviour \cite[6.5, p.~30]{iso21448}; an acceptance criterion is a ``criterion representing the absence of an unreasonable level of risk'' \cite[3.1, p.~2]{iso21448}.
+\item \textbf{Clause~9:} the V\&V strategy, ``including validation targets'', shall consider the ``sufficient coverage of the relevant scenario space'' and a rationale for the selected methods and validation targets \cite[9.1~a)--b), p.~42]{iso21448}. A validation target is a ``value to argue that the acceptance criterion is met'', and more than one validation target can be needed for one acceptance criterion \cite[3.33 and Note~3, p.~10]{iso21448}.
+\item \textbf{Clause~10:} known hazardous scenarios are not unreasonable if their probability of causing hazardous behaviour complies with the validation targets and no known scenario leads to unreasonable risk for specific road users \cite[10.7, pp.~49--50]{iso21448}.
+\item \textbf{Clause~11:} ``the validation results shall demonstrate that the residual risk from unknown hazardous scenarios meets the acceptance criteria with sufficient confidence'' \cite[11.1, p.~50]{iso21448}; Table~11 lists the methods, including fleet tests, simulation of random scenario sequences, sensitivity analysis and scenario exploration in the real world \cite[11.3, Table~11, p.~51]{iso21448}.
+\item \textbf{Clause~12:} the evaluation asks whether the V\&V strategy covers all known hazardous scenarios and argues that the residual risk from unknown ones meets the acceptance criteria with sufficient confidence \cite[12.3~c), p.~54]{iso21448}.
+\item \textbf{Clause~13:} a field monitoring process shall be defined before release and executed during operation \cite[13.1, p.~55]{iso21448}.
+\item \textbf{Annex~C:} guidance on V\&V, from deriving validation targets (C.2) to statistics (C.3), scenario parameterisation and sampling (C.5) and reductions of testing (C.6) \cite[C.1, pp.~125--126]{iso21448}.
 \end{itemize}
-Acceptance criteria are justified by risk acceptance rationales such as ALARP, MEM, positive risk balance and GAMAB \cite[Sec.~III-B]{betschinske2025}.
+Acceptance criteria can be justified by GAMAB/GAME, a positive risk balance, ALARP or MEM, alone or in combination \cite[6.5, pp.~30--31]{iso21448}; Betschinske et al.\ give the same list \cite[Sec.~III-B, item~2]{betschinske2025}. A secondary summary of the clauses is in \cite[Sec.~2.1, pp.~6--10]{schaller2026}.
+
+ISO~21448 also defines a \emph{vehicle-level SOTIF strategy} (VLSS): a set of vehicle-level \emph{requirements} for the intended functionality, such as transitions to degraded states on ODD exit \cite[3.34, p.~10; D.1, p.~159]{iso21448}. The VLSS is the overarching specification and is itself verified according to the V\&V strategy of Clause~9 \cite[D.1, p.~159]{iso21448}. This report therefore calls the test plan the \emph{vehicle-level V\&V strategy}, not the VLSS.
 
 For L4 systems, ISO~21448 is complemented by:
 \begin{itemize}
-\item \textbf{ISO/TS~5083}, the ADS-level standard. Betschinske et al.\ quote its statement that, for L3, ``a similar amount of real-world test driving as for state-of-the-art L2 systems'' seems appropriate (ISO/TS~5083, p.~146, as cited in \cite[Sec.~I]{betschinske2025}), and argue that carrying the L2 derivation to higher levels gives infeasible targets \cite[Sec.~I]{betschinske2025}.
+\item \textbf{ISO/TS~5083}, the ADS-level standard (positive risk balance is already one of the rationales of ISO~21448 6.5). Betschinske et al.\ quote its statement that, for L3, ``a similar amount of real-world test driving as for state-of-the-art L2 systems'' seems appropriate (ISO/TS~5083, p.~146, as cited in \cite[Sec.~I]{betschinske2025}), and argue that carrying the L2 derivation to higher levels gives infeasible targets \cite[Sec.~I]{betschinske2025}.
 \item \textbf{ANSI/UL~4600}, which defines safety performance indicators (Sec.~\ref{sec:spi}) (UL~4600 Ch.~16, as cited in \cite[Sec.~2]{ratiu2024} and \cite[slide~12]{koopman2022}).
 \item \textbf{The UNECE NATM multi-pillar approach} (audit, simulation, track, real-world testing, in-service monitoring; ECE/TRANS/WP.29/2021/61), on which Commission Implementing Regulation (EU)~2022/1426 builds \cite[web article, no sections]{siemensnatm}.
 \end{itemize}
@@ -105,18 +109,18 @@ For L4 systems, ISO~21448 is complemented by:
 %=====================================================================
 \section{From acceptance criterion to validation target}\label{sec:vt}
 \subsection{Decomposition of the acceptance criterion}
-ISO~21448 Annex~C.2 factorises the acceptance criterion $A_H$ for a harm $H$ as
+ISO~21448 decomposes the acceptance criterion $A_H$ for a harm $H$, ``assuming that a hazardous behaviour does not lead always to a harm'', as
 \begin{equation}
 A_H = \RHB \cdot P(E\mid \mathrm{HB}) \cdot P(\bar C\mid E)\cdot P(S\mid \bar C)
 \label{eq:annexc}
 \end{equation}
-(Annex~C.2, as rendered in \cite[Sec.~IV-B(a), Eq.~(1)]{putze2023} and \cite[Sec.~V, Eqs.~(6)--(7)]{betschinske2025}). Here $\RHB$ is the rate of the hazardous behaviour, $P(E\mid\mathrm{HB})$ the probability of the exposing scenario, $P(\bar C\mid E)$ the probability of non-controllability and $P(S\mid\bar C)$ the probability of the severity. Solving for $\RHB$ gives the tolerable hazardous-behaviour rate.
+\cite[C.2.1, Formula~(C.1), p.~127]{iso21448}; the same formula is discussed in \cite[Sec.~IV-B(a), Eq.~(1)]{putze2023} and \cite[Sec.~V, Eqs.~(6)--(7)]{betschinske2025}. The standard writes $P_{E|HB}$, $P_{C|E}$ and $P_{S|C}$: $P_{C|E}$ is ``the probability that the hazardous behaviour is not controllable'', and $P_{S|C}$ the probability of a degree of severity ``assuming that the controllability action was not successful'' \cite[C.2.1, p.~126]{iso21448}; this report writes $\bar C$ to make that explicit. Solving for $\RHB$ gives the tolerable hazardous-behaviour rate \cite[C.2.1, Formula~(C.2), p.~127]{iso21448}. The standard's example: $A_H=10^{-8}$/h, $P_{C|E}=10\%$, $P_{S|C}=1\%$, $P_{E|HB}=5\%$ give $\RHB=2\times10^{-4}$/h, and 5{,}000~h without hazardous behaviour show the criterion met with 63\% confidence \cite[C.2.1, Formula~(C.3) and Example, p.~127]{iso21448}.
 
-Putze et al.\ raise three objections \cite[Sec.~IV-B(b)]{putze2023}:
+Putze et al.\ raise three objections \cite[Sec.~IV-B(b)]{putze2023}; the standard's own wording, given after each, answers them only in part:
 \begin{enumerate}
-\item A correct chain-rule decomposition needs further conditioning, e.g.\ $P(S\mid \bar C, E, \mathrm{HB})$ instead of $P(S\mid\bar C)$.
-\item Annex~C.2.1 omits the aggregation over several hazardous behaviours leading to the same harm, without flagging this as a simplification.
-\item Field-data quantities are not system-independent: exposure depends on route planning and the ODD; their example is the probability of a truck in front \cite[Sec.~IV-B(c)]{putze2023}.
+\item A correct chain-rule decomposition needs further conditioning, e.g.\ $P(S\mid \bar C, E, \mathrm{HB})$ instead of $P(S\mid\bar C)$. The standard notes that the product of simple probabilities applies when the triggering conditions are independent of the exposure \cite[C.2.1, Note~5, p.~127]{iso21448}.
+\item Annex~C.2.1 omits the aggregation over several hazardous behaviours leading to the same harm, without flagging this as a simplification. The standard links every hazardous behaviour to its own acceptance criterion and derives $A_H$ ``from original acceptance criteria in combination with safety margin'' \cite[C.2.1, p.~126]{iso21448}, but does not say how the original criterion is split.
+\item Field-data quantities are not system-independent: exposure depends on route planning and the ODD; their example is the probability of a truck in front \cite[Sec.~IV-B(c)]{putze2023}. The standard says the parameters ``can be checked for consistency'' with the ISO~26262 HARA \cite[C.2.1, Note~4, p.~127]{iso21448}.
 \end{enumerate}
 They therefore bound the harm probability over triples of triggering condition $T$, behaviour $B$ and event $E$:
 \begin{equation}
@@ -126,18 +130,18 @@ P(H) \le \sum_{T,B,E} P(T)\,P(B\mid T)\,P(E\mid B,T)\,P(H\mid E,B,T)
 \cite[Sec.~IV-B(b), Eq.~(2); severity-stratified form Eq.~(3)]{putze2023}, and conclude that ``it is not sufficient to derive a single validation target'' \cite[Sec.~IV-B(b), last paragraph]{putze2023}.
 
 \subsection{The zero-failure test}
-Assuming hazardous behaviours arrive as a Poisson process, the exposure $\tau$ needed to show $\text{rate}\le\RHB$ at confidence $C$ with no observed event is
+Assuming that incidents have a Poisson distribution, ISO~21448 gives the driving $\tau$ without potentially hazardous behaviour needed to show an incident rate $\le A_H$ ``with a confidence $\alpha$'' as $\tau=-\ln(1-\alpha)/A_H$ \cite[C.3, Example~3 and Formula~(C.7), p.~137]{iso21448}, taken from Littlewood and Wright \cite{littlewood1997}. Applied to the tolerable rate of Eq.~\eqref{eq:annexc}, as in the standard's own example \cite[C.2.1, p.~127]{iso21448} and in \cite[Sec.~IV-B(a)]{putze2023}, and writing $C$ for the confidence:
 \begin{equation}
 \tau = \frac{-\ln(1-C)}{\RHB}
 \label{eq:tau}
 \end{equation}
-(Annex~C, as rendered in \cite[Sec.~IV-B(a)]{putze2023}; real-world driving requirement of Annex~C.3, ISO~21448 p.~137, as cited in \cite[Sec.~III-C, Eq.~(5)]{betschinske2025}). Betschinske et al.\ write the test as $H_0\!: R > A_H$ against $H_1\!: R\le A_H$ with the type-I error bound $P(X\le k)\le\alpha$, $\lambda = A_H\tau_k$ \cite[Sec.~III-C, Eqs.~(3)--(4)]{betschinske2025}.
+For $C\approx0.63$, $\tau = 1/A_H$ \cite[C.3, Note~2, p.~137]{iso21448}. The standard adds that $\tau$ ``can be quite large and therefore not practical in some cases'' and can be lessened with expert knowledge and MIL, SIL and HIL kilometres \cite[C.3, p.~137]{iso21448}; Betschinske et al.\ call it the real-world driving requirement \cite[Sec.~III-C, item~5, Eq.~(5)]{betschinske2025}. Betschinske et al.\ write the test as $H_0\!: R > A_H$ against $H_1\!: R\le A_H$ with the type-I error bound $P(X\le k)\le\alpha$, $\lambda = A_H\tau_k$ \cite[Sec.~III-C, Eqs.~(3)--(4)]{betschinske2025}.
 
-\textbf{Notation trap.} In Putze et al.\ $\alpha$ denotes the confidence level \cite[Sec.~IV-B(a)]{putze2023}; in Betschinske et al.\ $\alpha$ is the type-I error, so their Eq.~(5) reads $-\ln(\alpha)/A_H$ \cite[Sec.~III-C, Eq.~(5)]{betschinske2025}. This report writes $C$ for confidence throughout.
+\textbf{Notation trap.} In Formula~(C.7) $\alpha$ is the \emph{confidence} \cite[C.3, p.~137]{iso21448}, and Putze et al.\ follow this \cite[Sec.~IV-B(a)]{putze2023}. In C.6.3.2 the same standard writes the confidence as $1-\alpha$, i.e.\ $\alpha$ is an error level \cite[C.6.3.2, Example~1, p.~156]{iso21448}, and Betschinske et al.\ use $\alpha$ as type-I error, so their Eq.~(5) reads $-\ln(\alpha)/A_H$ \cite[Sec.~III-C, Eq.~(5)]{betschinske2025}. This report writes $C$ for confidence throughout.
 
 At $C=0.95$, $-\ln 0.05\approx 3.00$ (the ``rule of three''). Kalra and Paddock use the per-mile form $n=\ln(1-C)/\ln(R)$ with reliability $R=1-F$ \cite[Sec.~1, p.~3, Eq.~2]{kalra2016}. With the US fatality rate of 1.09 per 100 million miles in 2013 \cite[Introduction, p.~2]{kalra2016}, this gives 275 million failure-free miles, or about 12.5 years for 100 vehicles driving 24/7 at 25~mph \cite[Sec.~1, p.~3; Table~1, p.~10]{kalra2016}. Demonstrating a fatality rate 20\% below the human rate with 95\% confidence and 80\% power takes more than 11 billion miles, about 518 years \cite[Sec.~3, p.~8]{kalra2016}.
 
-Schaller et al.\ give the example criterion ``overlooking a car on the other lane is at most $10^{-9}$ per hour'', the order of magnitude used in civil aviation for extremely improbable failure conditions, and call the testing needed to prove it prohibitive \cite[Sec.~5.1, p.~14]{schaller2026}. Equation~\eqref{eq:tau} gives $3.0\times10^{9}$~h, about 342{,}000 vehicle-years of 24/7 operation \own{Sec.~\ref{sec:vt}}.
+The standard notes that acceptance criteria are usually very small, e.g.\ $10^{-8}$/h \cite[C.2.1, p.~126]{iso21448}. Schaller et al.\ give the example criterion ``overlooking a car on the other lane is at most $10^{-9}$ per hour'', the order of magnitude used in civil aviation for extremely improbable failure conditions, and call the testing needed to prove it prohibitive \cite[Sec.~5.1, p.~14]{schaller2026}. Equation~\eqref{eq:tau} gives $3.0\times10^{9}$~h, about 342{,}000 vehicle-years of 24/7 operation \own{Sec.~\ref{sec:vt}}.
 
 \subsection{Plans that allow \texorpdfstring{$k$}{k} events}
 If the plan allows $k$ events, the pass condition $P(X\le k\mid\lambda)\le 1-C$ is solved by
@@ -162,19 +166,19 @@ $C$ \textbackslash{} $k$ & 0 & 1 & 2 & 3 & 4 & 5\\
 \end{tabular}
 \end{table}
 
-$k$ and $\tau$ must be fixed before testing: under classical hypothesis testing, the test cannot be extended after a failure without inflating the type-I error \cite[Sec.~III-C, item~6]{betschinske2025}. Raising $C$ from 0.95 to 0.99 multiplies $\tau$ by $\ln 0.01/\ln 0.05 = 1.54$; allowing $k=1$ at $C=0.95$ multiplies it by 1.58 \own{Table~\ref{tab:lambda}}.
+$k$ and $\tau$ must be fixed before testing: under classical hypothesis testing, the test cannot be extended after a failure without inflating the type-I error \cite[Sec.~III-C, item~6]{betschinske2025}. ISO~21448 likewise lists, among what the system owner specifies prior to testing, the validation target as ``stopping rule'' and the ``criterion for restarting distance counter'' \cite[C.3, p.~136]{iso21448}. Raising $C$ from 0.95 to 0.99 multiplies $\tau$ by $\ln 0.01/\ln 0.05 = 1.54$; allowing $k=1$ at $C=0.95$ multiplies it by 1.58 \own{Table~\ref{tab:lambda}}.
 
 \subsection{What a passed test silently assumes}
 \begin{enumerate}
 \item \textbf{Homogeneous Poisson process}: constant rate and independent events (the Poisson assumption in \cite[Sec.~IV-B(a)]{putze2023}).
 \item \textbf{Representative exposure}: the tested mix of conditions equals the deployed mix; the factors in Eq.~\eqref{eq:annexc} are system-dependent \cite[Sec.~IV-B(b)--(c)]{putze2023}.
-\item \textbf{Frozen software}: a fix invalidates earlier hours unless carry-over is argued; reusing earlier systems' data is a main validity gap \cite[Sec.~V, RA ``Decomposition of Hazardous Behavior'' and ``Bayesian Statistics'']{betschinske2025}.
-\item \textbf{One behaviour per harm}: otherwise rates add, Eq.~\eqref{eq:bonf} \cite[Sec.~IV-B(b)]{putze2023}. Aggregating separately validated terms gives a joint confidence of at least $1-(\alpha_1+\alpha_2)$ (ISO~21448 p.~165, as cited in \cite[Sec.~V, RA ``Decomposition of Hazardous Behavior'']{betschinske2025}).
+\item \textbf{Frozen software}: a fix invalidates earlier hours unless carry-over is argued; the standard's example assumes ``sensor and algorithms are fixed during testing and real-world use'' \cite[C.6.3.2, p.~154]{iso21448}, and new unknown hazardous scenarios can arise with algorithm, ODD or driving-policy changes \cite[11.3, Note~1, p.~52]{iso21448}; reusing earlier systems' data is a main validity gap \cite[Sec.~V, RA ``Decomposition of Hazardous Behavior'' and ``Bayesian Statistics'']{betschinske2025}.
+\item \textbf{One behaviour per harm}: otherwise rates add, Eq.~\eqref{eq:bonf} \cite[Sec.~IV-B(b)]{putze2023}. Aggregating separately validated terms gives a joint confidence of at least $1-(\alpha_1+\alpha_2)$ \cite[C.6.3.2, Example~1 and footnote~1, p.~156]{iso21448}. (Betschinske et al.\ cite this as ``p.~165'' \cite[Sec.~V, RA ``Decomposition of Hazardous Behavior'']{betschinske2025}; in the printed standard it is on p.~156.)
 \item \textbf{Frequentist meaning}: a system exactly at the limit passes with probability at most $1-C$; a posterior statement needs a prior. The flat prior Gamma$(1,0)$ reproduces the base model, Jeffreys' Gamma$(0.5,0)$ lowers the requirement \cite[Sec.~V, RA ``Bayesian Statistics'']{betschinske2025}.
 \end{enumerate}
 
 \subsection{Ways to reduce the effort}
-Betschinske et al.\ review reduction approaches. Sequential testing (Wald's SPRT) allows optional stopping only if both hypotheses are set at or stricter than the acceptance threshold, $\theta_0,\theta_1\ge\theta_{A_H}$, and gives a reduction only if $\beta>1-c$ with $c=\tfrac{\theta_0}{\theta_1}\alpha^{\theta_0/\theta_1}$ \cite[Sec.~V, RA ``Sequential Testing'', Eqs.~(14)--(15)]{betschinske2025}. Further approaches are decomposition of the hazardous behaviour \cite[Sec.~V, Eqs.~(8)--(9)]{betschinske2025}, high-yield route profiles with importance-sampling correction \cite[Sec.~V, RA ``High Yield Route Profiles'', Fig.~12]{betschinske2025}, extreme value analysis \cite[Sec.~V, RA ``Extreme Value Analysis'', Table~IX]{betschinske2025} and scenario-based testing \cite[Sec.~V, RA ``Scenario Based Testing'', Table~XI]{betschinske2025}. Direct mileage-based validation of upper bounds on harm probability is not feasible for ADS \cite[Sec.~IV-A(b), citing Wachenfeld and Winner]{putze2023}, and a residual dependence on field testing is likely to remain \cite[Sec.~VII]{betschinske2025}.
+The standard itself offers: focusing validation on the most severe modality of a partitioned usage variable \cite[C.6.1, p.~153]{iso21448}; sufficient conditions at component level, e.g.\ $E[\text{collisions}]\le P(D_m>c)\,E[\text{objects}]$ with separately estimated factors \cite[C.6.2, p.~153; C.6.3.2, pp.~154--156]{iso21448}; and redundant, independent channels \cite[C.6.3.3, pp.~156--158]{iso21448}. Betschinske et al.\ review further reduction approaches. Sequential testing (Wald's SPRT) allows optional stopping only if both hypotheses are set at or stricter than the acceptance threshold, $\theta_0,\theta_1\ge\theta_{A_H}$, and gives a reduction only if $\beta>1-c$ with $c=\tfrac{\theta_0}{\theta_1}\alpha^{\theta_0/\theta_1}$ \cite[Sec.~V, RA ``Sequential Testing'', Eqs.~(14)--(15)]{betschinske2025}. Further approaches are decomposition of the hazardous behaviour \cite[Sec.~V, Eqs.~(8)--(9)]{betschinske2025}, high-yield route profiles with importance-sampling correction \cite[Sec.~V, RA ``High Yield Route Profiles'', Fig.~12]{betschinske2025}, extreme value analysis \cite[Sec.~V, RA ``Extreme Value Analysis'', Table~IX]{betschinske2025} and scenario-based testing \cite[Sec.~V, RA ``Scenario Based Testing'', Table~XI]{betschinske2025}. Direct mileage-based validation of upper bounds on harm probability is not feasible for ADS \cite[Sec.~IV-A(b), citing Wachenfeld and Winner]{putze2023}, and a residual dependence on field testing is likely to remain \cite[Sec.~VII]{betschinske2025}.
 
 %=====================================================================
 \section{Scenario-based residual risk}\label{sec:scenario}
@@ -192,7 +196,7 @@ De Gelder computes risk in the same spirit, by combining the outcome of virtual 
 \hat p_{\ell,s}=\frac1N\sum_{i=1}^N w_i h_i,\qquad w_i=\frac{f_\ell(\theta_i)}{q_\ell(\theta_i)},\qquad \mathrm{ESS}=\frac{(\sum_i w_i)^2}{\sum_i w_i^2}
 \label{eq:is}
 \end{equation}
-(importance sampling and effective sample size: \cite[Ch.~9]{owen2013}). Zhao et al.\ apply importance sampling with cross-entropy-optimised proposals to lane-change scenarios from naturalistic data and report acceleration factors of about 2{,}000 to 20{,}000 \cite[Abstract]{zhao2017}.
+(importance sampling and effective sample size: \cite[Ch.~9]{owen2013}). ISO~21448 describes the same building blocks: parameter distributions determined from naturalistic driving data, e.g.\ by kernel density estimation \cite[C.5, Figures~C.9--C.11, pp.~146--148]{iso21448}, importance sampling that biases the test parameters towards riskier areas \cite[C.5, Figures~C.12--C.14, pp.~149--151]{iso21448}, and a final risk estimate ``based on the simulation results and depending on the acceptance criteria'' \cite[C.5, p.~151]{iso21448}. Zhao et al.\ apply importance sampling with cross-entropy-optimised proposals to lane-change scenarios from naturalistic data and report acceleration factors of about 2{,}000 to 20{,}000 \cite[Abstract]{zhao2017}.
 
 \subsection{Counting critical runs is not a risk estimate}
 Figure~\ref{fig:toy} shows why. In a toy cut-in model, a uniform test design puts 5.4\% of its runs in the failure region, while the real-world probability of failure per cut-in is $4.9\times10^{-5}$ \own{Fig.~\ref{fig:toy}\synthetic}. Non-critical runs are evidence too. Falsification and criticality search find triggering conditions (Clause~10), but do not estimate risk unless $q$ is known. Figure~\ref{fig:conv} shows importance sampling converging long before plain Monte Carlo sees its first collision.
@@ -225,7 +229,7 @@ Term & Validation target & Measured in\\\midrule
 $\nu_\ell^U$ & enough naturalistic data per scenario class (Poisson bound on counts) & hours of ODD data\\
 $f_\ell$ & estimation error of the fitted distribution below a threshold; de Gelder quantifies completeness via the expected approximation error of a KDE \cite[Ch.~3]{degelder2022} & scenario instances\\
 $p_\ell^U$ & upper bound per scenario; plain Monte Carlo with zero failures needs $N=3/p^*$ runs, so importance sampling is required & runs, ESS\\
-simulation credibility & real-versus-simulated agreement for the same $\theta$; NATM includes a credibility assessment framework \cite[web article]{siemensnatm} & proving ground, replays\\
+simulation credibility & real-versus-simulated agreement for the same $\theta$; ``how accurately the models represent the real world is part of the safety argument'' \cite[C.1, p.~125]{iso21448}; NATM includes a credibility assessment framework \cite[web article]{siemensnatm} & proving ground, replays\\
 $R^U_{\text{unknown}}$ & field driving without unexplained HB, Eq.~\eqref{eq:tau} restricted to what the taxonomy misses & hours\\
 \bottomrule
 \end{tabular}
@@ -234,8 +238,8 @@ Scenario-based testing lacks a direct quantitative link to mileage and an agreed
 
 \subsection{Parameterising logical scenarios}
 \begin{enumerate}
-\item Define the scenario type and its parameters, following the logical/concrete distinction of ISO~34502 \cite[location not verified]{iso34502}.
-\item Keep $\theta$ small (3--6 dimensions) by sensitivity analysis; Glasmacher et al.\ list parameter sensitivity analysis in simulation as data-driven evidence \cite[Sec.~III-D, Table~I]{glasmacher2024}.
+\item Define the scenario type and its parameters, following the logical/concrete distinction of ISO~34502 \cite[location not verified]{iso34502}; ISO~21448 parameterises a lead-braking scenario by $v_{\text{end}}$, $t_{\text{brake}}$ and $\Delta v$ \cite[C.5, Figure~C.10, p.~147]{iso21448}.
+\item Keep $\theta$ small (3--6 dimensions) by sensitivity analysis; ISO~21448 asks that parameter selection be argued ``by, for example, sensitivity analysis or statistical analysis'' \cite[11.3, Table~11 Note, p.~51]{iso21448}; Glasmacher et al.\ list parameter sensitivity analysis in simulation as data-driven evidence \cite[Sec.~III-D, Table~I]{glasmacher2024}.
 \item Mine instances from drive logs with a scenario tagger \cite[Secs.~III-A--III-C]{guo2023}; each detection gives one $\theta$ sample and one count towards $\nu$.
 \item Fit $f_\ell$: marginals plus copula (Sec.~\ref{sec:copula}) or kernel density estimation \cite[Ch.~3 and Ch.~6]{degelder2022}.
 \item Estimate $\hat\nu_\ell=n_\ell/T$ with a Poisson or Gamma interval.
@@ -290,7 +294,7 @@ For $\rho<1$ the Gaussian copula has zero upper tail dependence, whereas the $t$
 %=====================================================================
 \section{Worked example: unintended braking with 1{,}000 concrete scenarios}\label{sec:example}
 \subsection{Set-up}
-\textbf{Everything in this section is synthetic\synthetic.} Validation target: MAIS2+ injuries from rear-end collisions caused by unintended (phantom) braking $\le A_H=10^{-7}$/h, with 10\% reserved for unknown triggers, leaving a budget of $9\times10^{-8}$/h. The ODD is partitioned into 100 logical scenarios: 5 trigger contexts $\times$ 4 ego speed bands $\times$ 5 follower-headway classes. The hazardous-behaviour rate $\lambda$ depends on trigger and speed only, so 20 evidence cells serve 100 scenarios. Per logical scenario, 2{,}000 plain runs from $f$ and 10 importance-sampled runs from $q$ are simulated with a one-dimensional kinematic model ($\Delta t=0.01$~s); ego speed, follower headway, reaction time and deceleration are coupled by a Gaussian copula with $\rho(v,h)=0.25$, $\rho(h,T_r)=-0.30$, $\rho(T_r,a_f)=-0.40$. The illustrative injury curve is $P(\text{MAIS2+}\mid\Delta v)=1/(1+e^{-(\Delta v-45)/7})$, $\Delta v$ in km/h \own{App.~\ref{app:code}}.
+\textbf{Everything in this section is synthetic\synthetic.} The set-up follows the structure of the standard's own AEB example, in which unintended braking for longer than 340~ms with a closely following vehicle can lead to a rear-end collision, and a Monte Carlo simulation over trailing distance and reaction time estimates the collision probability \cite[C.2.2.3, Figures~C.1--C.2, pp.~129--130]{iso21448}. The standard finds the collision probability ``higher at lower speeds because of the short trailing distance'' \cite[C.2.2.3, Figure~C.3, pp.~130--131]{iso21448}, as does this example (Fig.~\ref{fig:collinj}). Validation target: MAIS2+ injuries from rear-end collisions caused by unintended (phantom) braking $\le A_H=10^{-7}$/h, with 10\% reserved for unknown triggers, leaving a budget of $9\times10^{-8}$/h. The ODD is partitioned into 100 logical scenarios: 5 trigger contexts $\times$ 4 ego speed bands $\times$ 5 follower-headway classes. The hazardous-behaviour rate $\lambda$ depends on trigger and speed only, so 20 evidence cells serve 100 scenarios. Per logical scenario, 2{,}000 plain runs from $f$ and 10 importance-sampled runs from $q$ are simulated with a one-dimensional kinematic model ($\Delta t=0.01$~s); ego speed, follower headway, reaction time and deceleration are coupled by a Gaussian copula with $\rho(v,h)=0.25$, $\rho(h,T_r)=-0.30$, $\rho(T_r,a_f)=-0.40$. The illustrative injury curve is $P(\text{MAIS2+}\mid\Delta v)=1/(1+e^{-(\Delta v-45)/7})$, $\Delta v$ in km/h \own{App.~\ref{app:code}}.
 
 \begin{figure}[H]\centering
 \includegraphics[width=\linewidth]{figures/f13_trajectories.pdf}
@@ -324,7 +328,7 @@ On 200{,}000 proposal draws the mean weight is 0.996, and the IS estimate (0.016
 \end{figure}
 \begin{figure}[H]\centering
 \includegraphics[width=\linewidth]{figures/f19_coll_inj.pdf}
-\caption{Collision probability, mean $\Delta v$ and injury probability by speed band and headway\synthetic.}
+\caption{Collision probability, mean $\Delta v$ and injury probability by speed band and headway\synthetic.}\label{fig:collinj}
 \end{figure}
 \begin{figure}[H]\centering
 \includegraphics[width=\linewidth]{figures/f20_risk_share.pdf}
@@ -373,7 +377,7 @@ provenance & software hash, configuration, map version, calibration & attached t
 \bottomrule
 \end{tabular}
 \end{table}
-Clause~13 lists, as examples of monitored information, incidents that caused harm, exceedances of safety-relevant thresholds, and observations that extend the knowledge of scenarios and conditions \cite[Sec.~2.1, p.~10]{schaller2026}.
+Clause~13 lists as topics for observation incidents that caused or could have caused harm or exceeded defined values, the body of knowledge, and context evolution \cite[13.3~a)--c), pp.~56--57]{iso21448}. For higher levels of automation it names on-board monitoring that detects functional insufficiencies before accidents occur, e.g.\ capturing violations of a minimum distance, scenarios close to triggering a system reaction, unexpected take-overs and scenarios leading to a minimal risk condition, and data storage such as DSSAD/EDR \cite[13.3, Note~1 and Examples~1--2, p.~56]{iso21448}. These are leading SPIs in the sense of Sec.~\ref{sec:spi}.
 
 \subsection{Statistics}
 Rates are bounded with Eq.~\eqref{eq:chi2} per stratum and software version (Fig.~\ref{fig:rate}); binomial proportions with Clopper--Pearson bounds \cite[location not verified]{clopper1934}. Near misses can be extrapolated to crash frequencies with extreme value analysis: a generalised Pareto distribution is fitted to exceedances over a threshold \cite[Ch.~4]{coles2001}; Betschinske et al.\ review its use for validation and its open issues \cite[Sec.~V, RA ``Extreme Value Analysis'', Table~IX]{betschinske2025}.
@@ -415,9 +419,10 @@ The time an SPI needs to detect a doubling of its rate depends only on the expec
 
 %=====================================================================
 \section{L4 validation, the scenario database and completeness}\label{sec:l4}
-\subsection{Vehicle-level SOTIF strategy}
+\subsection{Vehicle-level V\&V strategy}
+Note that ISO~21448 reserves ``vehicle-level SOTIF strategy'' for a set of vehicle-level requirements (Sec.~\ref{sec:framework}) \cite[3.34, p.~10]{iso21448}; the strategy below is the V\&V strategy of Clause~9.
 \begin{table}[H]\centering\small
-\caption{Pillars of the vehicle-level strategy and the term they feed.}
+\caption{Pillars of the vehicle-level V\&V strategy (ISO~21448 Clause~9) and the term they feed.}
 \begin{tabular}{L{5.4cm}L{2.4cm}L{6.4cm}}
 \toprule
 Pillar & SOTIF & Feeds\\\midrule
@@ -431,7 +436,7 @@ release argument & Cl.~12 & Eq.~\eqref{eq:claim} per harm\\
 \bottomrule
 \end{tabular}
 \end{table}
-The structure matches the NATM pillars of virtual, track and real-world testing, audit and in-service monitoring \cite[web article]{siemensnatm}. Schaller et al.\ show how a runtime monitor ensemble contributes evidence to Clauses~6, 9--11 and~13 without by itself establishing SOTIF compliance \cite[Sec.~1.2, p.~3; Secs.~5--7, pp.~14--18]{schaller2026}, and propose that the standard make explicit that residual risk can be quantified from a statistical argument over traffic situations sourced from monitoring data \cite[Sec.~8.2, p.~19]{schaller2026}.
+ISO~21448 expects validation to combine physical (test track, real-world) and simulation testing, with the quantitative target often allocated between them \cite[C.1, p.~125]{iso21448}, and the V\&V strategy to address the ODD boundaries and outside of the ODD as part of the coverage argument \cite[9.2 and Note, p.~43]{iso21448}. The structure matches the NATM pillars of virtual, track and real-world testing, audit and in-service monitoring \cite[web article]{siemensnatm}. Schaller et al.\ show how a runtime monitor ensemble contributes evidence to Clauses~6, 9--11 and~13 without by itself establishing SOTIF compliance \cite[Sec.~1.2, p.~3; Secs.~5--7, pp.~14--18]{schaller2026}, and propose that the standard make explicit that residual risk can be quantified from a statistical argument over traffic situations sourced from monitoring data \cite[Sec.~8.2, p.~19]{schaller2026}.
 
 \subsection{What the scenario database contributes}
 \begin{enumerate}
@@ -477,7 +482,7 @@ ISO~34503 specifies the ODD taxonomy \cite[location not verified]{iso34503} and 
 \label{fig:gran}
 \end{figure}
 
-\textbf{Combinatorial coverage.} De Gelder et al.\ define tag-based coverage
+\textbf{Combinatorial coverage.} ISO~21448 lists random combinations of known parameters and of known scenarios among the tests addressing area~3 \cite[C.1, items~1)--2), p.~125]{iso21448}. De Gelder et al.\ define tag-based coverage
 \begin{equation}
 \text{Coverage}_{\text{tag}}(n)=\frac{1}{n|L||C|}\sum_L\sum_C\min\big(n,N(L,C)\big)
 \end{equation}
@@ -489,15 +494,15 @@ ISO~34503 specifies the ODD taxonomy \cite[location not verified]{iso34503} and 
 \end{figure}
 
 \subsection{Arguing completeness}
-Glasmacher et al.\ argue the completeness of a scenario concept in goal structuring notation by testing counter-hypotheses \cite[Sec.~III-C; applied in Sec.~IV-B]{glasmacher2024}. They define completeness as binary and applying to the concept, and coverage as quantifiable and applying to parameter spaces and value assignments \cite[Secs.~III-A, III-B]{glasmacher2024}; evidence is knowledge-based or data-driven \cite[Sec.~III-D, Table~I]{glasmacher2024}. On inD they assign 59{,}253 base scenarios with no unassigned seconds and use saturation curves \cite[Sec.~IV-C, Fig.~5]{glasmacher2024}, noting that ``unforeseen scenarios cannot be identified with argumentation, but with external input'' \cite[Sec.~IV-C]{glasmacher2024} and that completeness claims can expire and need review in a dev-ops process \cite[Sec.~V]{glasmacher2024}. De Gelder et al.\ distinguish Type~I coverage (all relevant aspects of the ODD) from Type~II (all relevant aspects in the driving data) \cite[Sec.~III, Table~III]{degelder2024} and leave completeness metrics to future work \cite[Sec.~V]{degelder2024}. Hauer et al.\ \cite{hauer2019} estimate the number of scenario types not yet addressed in testing (as summarised in \cite[Sec.~II]{degelder2024}).
+Glasmacher et al.\ argue the completeness of a scenario concept in goal structuring notation by testing counter-hypotheses \cite[Sec.~III-C; applied in Sec.~IV-B]{glasmacher2024}. They define completeness as binary and applying to the concept, and coverage as quantifiable and applying to parameter spaces and value assignments \cite[Secs.~III-A, III-B]{glasmacher2024}; evidence is knowledge-based or data-driven \cite[Sec.~III-D, Table~I]{glasmacher2024}. On inD they assign 59{,}253 base scenarios with no unassigned seconds and use saturation curves \cite[Sec.~IV-C, Fig.~5]{glasmacher2024}, noting that ``unforeseen scenarios cannot be identified with argumentation, but with external input'' \cite[Sec.~IV-C]{glasmacher2024} and that completeness claims can expire and need review in a dev-ops process \cite[Sec.~V]{glasmacher2024}. De Gelder et al.\ distinguish Type~I coverage (all relevant aspects of the ODD) from Type~II (all relevant aspects in the driving data) \cite[Sec.~III, Table~III]{degelder2024} and leave completeness metrics to future work \cite[Secs.~V--VI]{degelder2024}. Table~11 of ISO~21448 lists ``scenario exploration in real world'', defined as searching ``for unknown scenarios by covering a diverse set of the real-world scenarios'' \cite[11.3, Table~11, method~O and footnote~e, p.~51]{iso21448}. Hauer et al.\ \cite{hauer2019} estimate the number of scenario types not yet addressed in testing (as summarised in \cite[Sec.~II]{degelder2024}).
 
-Five legs of an argument follow:
+ISO~21448 requires ``sufficient coverage of the relevant scenario space'' in the V\&V strategy \cite[9.1~a)~2), p.~42]{iso21448}, notes ``a representative coverage of the possible scenario space'' as one aspect of Clause~11 \cite[11.1, Note, p.~50]{iso21448}, and describes an iterative constrained-random process that converts area~3 into area~2 ``until sufficient coverage of the used functionality space is achieved'' \cite[C.3, Figure~C.4, p.~135]{iso21448}. Five legs of an argument follow:
 \begin{enumerate}
 \item construction: systematic derivation of the taxonomy, independent review;
 \item explained time: the share of driven time assigned to a category (Type~II coverage);
 \item saturation: a flattening discovery curve and small missing mass;
 \item risk-weighted remainder: bounded by Clause~11 field evidence within the reserve $\varepsilon A_H$;
-\item monitoring in operation, because completeness claims expire.
+\item monitoring in operation, because completeness claims expire: new unknown hazardous scenarios can arise with algorithm, ODD, OEDR or driving-policy changes and new vehicle types \cite[11.3, Note~1, p.~52]{iso21448}.
 \end{enumerate}
 For leg~3, the Good--Turing estimate of the probability that the next occurrence is of an unseen type \cite[location not verified]{good1953} and the Chao1 richness estimator \cite[location not verified]{chao1984} are
 \begin{equation}
@@ -517,8 +522,8 @@ with $f_1,f_2$ the numbers of types seen once or twice and $N$ the number of occ
 \toprule
 & ASAM OpenLABEL 1.0.0 (2021) & ISO 34504:2024\\\midrule
 nature & data format (JSON schema) for annotations \cite[standard page]{asamopenlabel} & vocabulary and structure for scenario categories \cite[web article]{tno2024}\\
-content & elements (objects, actions, events, contexts, relations) with name, uid, type and ontology id \cite[Sec.~2.3.1]{openlabelconcept}; relations as RDF triples \cite[Sec.~2.3.4]{openlabelconcept}; frames and frame intervals \cite[Sec.~2.3.2]{openlabelconcept}; streams \cite[Sec.~2.3.6]{openlabelconcept}; coordinate systems \cite[Secs.~2.3.7, 3.1]{openlabelconcept} & tags for vehicle types, environments, light, weather, road conditions, grouped into categories; examples, no exact values \cite[web article]{tno2024}\\
-semantics & none of its own: elements point to external ontologies \cite[Sec.~2.3.3]{openlabelconcept} & a semantic source to point to\\
+content & elements (objects, actions, events, contexts, relations) with name, uid, type and ontology id \cite[Sec.~2.3.1]{openlabelconcept}; relations as RDF triples \cite[Sec.~2.3.4]{openlabelconcept}; frames and frame intervals \cite[Secs.~2.3, 2.3.2]{openlabelconcept}; streams \cite[Secs.~2.3, 2.3.6]{openlabelconcept}; coordinate systems \cite[Secs.~2.3.7, 3.1]{openlabelconcept} & tags for vehicle types, environments, light, weather, road conditions, grouped into categories; examples, no exact values \cite[web article]{tno2024}\\
+semantics & none of its own: elements point to external ontologies \cite[Secs.~2.3, 2.3.3]{openlabelconcept} & a semantic source to point to\\
 scenario tags & labels selected from a pool and stored with scenario files for search \cite[Secs.~5.1--5.2]{openlabelconcept} & tags define the categories\\
 related & lists BSI PAS~1883 and ASAM OpenODD \cite[Sec.~1.3]{openlabelconcept} & part of the ISO 3450x family \cite[web article]{tno2024}\\
 \bottomrule
@@ -542,7 +547,7 @@ acceptance & one $A_H$ & per HE, human benchmark (Annex~C) & positive risk balan
 \bottomrule
 \end{tabular}
 \end{table}
-ACC is specified in ISO~15622 \cite[location not verified]{iso15622}. With $d$ parameters shifted by $\delta$ standard deviations, a Gaussian proposal gives $E_q[w^2]=e^{d\delta^2}$ and $\mathrm{ESS}/N\approx e^{-d\delta^2}$ \own{derived; Fig.~\ref{fig:ess}}. Fixed-proposal importance sampling therefore degrades in high dimension, which motivates the cross-entropy method \cite[location not verified]{rubinstein2016}, subset simulation \cite[location not verified]{aubeck2001} and adaptive importance sampling \cite[Ch.~10]{owen2013}. Runtime risk models can restrict exposure to risky situations: SINADRA derives monitorable risk-implausibility hypotheses from HARA work products and turns them into Boolean or Bayesian-network runtime models \cite[Sec.~1.3, pp.~4--5; Sec.~4.3, p.~77]{reich2026}; in its urban case study, behaviour-intent likelihoods weight a collision-risk signal \cite[Sec.~5.2.5, p.~131]{reich2026}. Such a reduction of $\nu_\ell$ must be argued inside Eq.~\eqref{eq:risk}.
+ACC is specified in ISO~15622 \cite[location not verified]{iso15622}; ISO~21448 uses an ACC lead-braking scenario as its example for parameter distributions and importance sampling \cite[C.5, Figure~C.9, pp.~146--147]{iso21448}. It also warns that the traffic-statistics approach of its AEB example ``can prove impractical'' for a fully automated vehicle ``unless specific considerations with respect to system architecture are made'' \cite[C.2.2.6, p.~134]{iso21448}. With $d$ parameters shifted by $\delta$ standard deviations, a Gaussian proposal gives $E_q[w^2]=e^{d\delta^2}$ and $\mathrm{ESS}/N\approx e^{-d\delta^2}$ \own{derived; Fig.~\ref{fig:ess}}. Fixed-proposal importance sampling therefore degrades in high dimension, which motivates the cross-entropy method \cite[location not verified]{rubinstein2016}, subset simulation \cite[location not verified]{aubeck2001} and adaptive importance sampling \cite[Ch.~10]{owen2013}. Runtime risk models can restrict exposure to risky situations: SINADRA derives monitorable risk-implausibility hypotheses from HARA work products and turns them into Boolean or Bayesian-network runtime models \cite[Sec.~1.3, pp.~4--5; Sec.~4.3, p.~77]{reich2026}; in its urban case study, behaviour-intent likelihoods weight a collision-risk signal \cite[Sec.~5.2.5, p.~131]{reich2026}. Such a reduction of $\nu_\ell$ must be argued inside Eq.~\eqref{eq:risk}.
 \begin{figure}[H]\centering
 \includegraphics[width=0.86\linewidth]{figures/f22_ess_dim.pdf}
 \caption{Effective sample size of importance sampling against the number of shifted parameters \own{derived and simulated}.}
@@ -553,7 +558,7 @@ ACC is specified in ISO~15622 \cite[location not verified]{iso15622}. With $d$ p
 \section{Limitations}\label{sec:limits}
 \begin{itemize}
 \item All example data are synthetic; correlations, rates, distributions and the injury curve are illustrative.
-\item ISO clause and page references were not checked against the standards themselves (Sec.~1.2).
+\item ISO~21448 references were checked against the standard; ISO/TS~5083, UL~4600, ISO~34502/34503/34504 and ISO~15622 were not available (Sec.~1.2).
 \item The kinematic model is one-dimensional, without lateral escape, brake build-up or reaction to brake release.
 \item Scenario shares are products of factor shares (independence between trigger, speed and headway).
 \item The Bayesian result depends on the prior, which must be defended to an assessor.
@@ -567,7 +572,7 @@ All numbers marked \textit{this report} and all figures are reproducible from th
 %=====================================================================
 \begingroup\small
 \begin{thebibliography}{99}
-\bibitem{iso21448} ISO 21448:2022. \emph{Road vehicles --- Safety of the intended functionality.} ISO, Geneva. Not accessed directly; see Sec.~1.2.
+\bibitem{iso21448} ISO 21448:2022(E). \emph{Road vehicles --- Safety of the intended functionality.} First edition, 2022-06. ISO, Geneva. Page numbers as printed.
 \bibitem{iso34502} ISO 34502:2022. \emph{Road vehicles --- Test scenarios for automated driving systems --- Scenario based safety evaluation framework.} ISO.
 \bibitem{iso34503} ISO 34503:2023. \emph{Road vehicles --- Test scenarios for automated driving systems --- Specification for operational design domain.} ISO.
 \bibitem{iso15622} ISO 15622. \emph{Intelligent transport systems --- Adaptive cruise control systems --- Performance requirements and test procedures.} ISO.
@@ -590,6 +595,7 @@ All numbers marked \textit{this report} and all figures are reproducible from th
 \bibitem{ratiu2024} D.~Ratiu, T.~Rohlinger, T.~Stolte, S.~Wagner (2024). Towards an argument pattern for the use of safety performance indicators. arXiv:2410.00578.
 \bibitem{koopman2022} P.~Koopman (2022). Safety Performance Indicators (SPIs) for Autonomous Vehicles. Lecture slides, Carnegie Mellon University. \url{https://users.ece.cmu.edu/~koopman/lectures/L124_SPI_vs_KPI.pdf}
 \bibitem{waymoinjury} Waymo. An omni-directional model of injury risk in planar crashes. \url{https://waymo.com/research/an-omni-directional-model-of-injury-risk-in-planar/}
+\bibitem{littlewood1997} B.~Littlewood, D.~Wright (1997). Some conservative stopping rules for the operational testing of safety-critical software. \emph{IEEE Transactions on Software Engineering} 23(11):673--683. Source of ISO~21448 Formula~(C.7).
 \bibitem{garwood1936} F.~Garwood (1936). Fiducial limits for the Poisson distribution. \emph{Biometrika} 28:437--442.
 \bibitem{clopper1934} C.~J.~Clopper, E.~S.~Pearson (1934). The use of confidence or fiducial limits illustrated in the case of the binomial. \emph{Biometrika} 26:404--413.
 \bibitem{good1953} I.~J.~Good (1953). The population frequencies of species and the estimation of population parameters. \emph{Biometrika} 40:237--264.

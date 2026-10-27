@@ -27,7 +27,7 @@
 
 <h2>1 · The chain</h2>
 <p>ISO 21448 sets an <strong>acceptance criterion</strong> <var>A</var><sub>H</sub> for each harm <var>H</var> (Clause 6). Clause 9 then turns it into one or more <strong>validation targets</strong>: test effort with pass/fail criteria. Annex C.2 gets there by peeling the harm rate back to the rate of the <strong>hazardous behaviour</strong> (HB) that the system itself controls:<span class="sn-ref">2</span></p>
-<span class="sn"><span class="sn-ref">2</span> Formula and variable reading as reported by <a href="https://arxiv.org/abs/2304.10170">Putze et al. (DLR, 2023)</a>, §III, and <a href="https://arxiv.org/abs/2506.10363">Betschinske et al. (2025)</a>, Eq. 6. Check the wording against your licensed copy of Annex C.2.</span>
+<span class="sn"><span class="sn-ref">2</span> ISO 21448:2022, C.2.1, Formulas (C.1)–(C.2), p. 127. The standard writes P<sub>C|E</sub> for “not controllable” and P<sub>S|C</sub> for severity after unsuccessful control. Critique: <a href="https://arxiv.org/abs/2304.10170">Putze et al. (DLR, 2023)</a>, §IV-B.</span>
 <div class="eq"><var>A</var><sub>H</sub> = <var>R</var><sub>HB</sub> · P(E | HB) · P(C̄ | E) · P(S | C̄) <span class="lbl">(1)</span></div>
 <p>Solve for <var>R</var><sub>HB</sub>. Every factor below 1 that you can justify buys test effort. If only 10% of hazardous behaviours occur in an exposing scenario, the system may misbehave ten times more often than the harm criterion allows. The same applies to the other two factors.</p>
 
@@ -39,7 +39,7 @@
 <p>At <var>C</var> = 0.95, −ln 0.05 ≈ 3.00. This is the reliability engineer’s <em>rule of three</em>: you need about three times the inverse target rate, with zero events. RAND’s famous result is exactly this formula. 1.09 fatalities per 10⁸ miles gives about 275 million failure-free miles.<span class="sn-ref">3</span></p>
 <span class="sn"><span class="sn-ref">3</span> <a href="https://www.rand.org/pubs/research_reports/RR1478.html">Kalra &amp; Paddock, RAND RR-1478 (2016)</a>. They use <var>n</var> = ln(1−<var>C</var>)/ln(1−<var>F</var>), which equals (2) to first order in <var>F</var>.</span>
 
-<div class="assume"><strong>Notation trap</strong>In Putze et al.’s rendering of Annex C, “α” in (2) is the <em>confidence level</em>. In Betschinske et al., α is the <em>type-I error</em>, so their formula reads −ln(α). This course always writes <var>C</var> for confidence. When an assessor quotes “α = 0.05”, ask which one they mean.</div>
+<div class="assume"><strong>Notation trap</strong>In ISO 21448 Formula (C.7) (C.3, p. 137), “α” is the <em>confidence level</em>, and Putze et al. follow it. In C.6.3.2 (p. 156) the same standard writes the confidence as 1 − α. In Betschinske et al., α is the <em>type-I error</em>, so their formula reads −ln(α). This course always writes <var>C</var> for confidence. When an assessor quotes “α = 0.05”, ask which one they mean.</div>
 
 <details class="reveal"><summary>Check your §0 prediction</summary>
 <p><var>τ</var> = 3.00 / 10⁻⁹ h⁻¹ ≈ <span class="num">3.0 × 10⁹ h</span>. That is about 342,000 years for one vehicle running 24/7, or 34 years for a fleet of 10,000. This is why Schaller et al. turn to monitor outputs as proxy evidence. It is also why ISO 21448 lets you argue absence of unreasonable risk by means other than direct failure probabilities.</p>

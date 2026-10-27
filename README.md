@@ -33,7 +33,7 @@ The workbooks are written by openpyxl without cached values. Excel recalculates 
 
 ## Important
 
-**All numbers in the examples are synthetic and illustrative.** They demonstrate the calculation chain and describe no real system. The ISO 21448 Annex C formulas are quoted as rendered by Putze et al. (2023) and Betschinske et al. (2025); check them against a licensed copy of the standard.
+**All numbers in the examples are synthetic and illustrative.** They demonstrate the calculation chain and describe no real system. ISO 21448 references were checked against ISO 21448:2022(E) (first edition, 2022-06; printed page numbers). ISO/TS 5083 and UL 4600 references are taken from the secondary sources named with them.
 
 ## Key sources
 
