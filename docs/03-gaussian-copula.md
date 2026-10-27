@@ -52,6 +52,7 @@ R must be symmetric positive definite: det(R) > 0 and the Cholesky factor exists
 
 - Check with tail-dependence plots or empirical tail-dependence coefficients.
 - Alternatives: the **t-copula** (symmetric tail dependence) and **vine copulas** (flexible pairwise structure in high dimension).
+- All copula formulas on this page were checked numerically (`tools/check_equations.py`; report Sec. 10).
 
 ## Effect in the example
 

@@ -137,5 +137,5 @@ and the effective sample size is (Σw)² / Σw². Both are live formulas in shee
 
 1. Replace the marginals of f with distributions fitted to your scenario instances, and R with normal-score or Kendall-τ estimates (see [03-gaussian-copula.md](03-gaussian-copula.md)).
 2. Replace `simulate()` with calls to your simulator. Log θ, the outcome and q(θ) for every run.
-3. Choose q from a pilot run, by shifting the marginals toward observed failure regions (or with cross-entropy optimisation). Monitor the ESS: if a few weights dominate, q is too far from f.
+3. Choose q from a pilot run, by shifting the marginals toward observed failure regions, with cross-entropy optimisation, or with adaptive state-dependent proposals for sequential systems (Delecki et al. 2024, arXiv:2412.02154). Monitor the ESS *and* the relative standard error of each estimate: if a few weights dominate, q is too far from f.
 4. Keep the pure-f Monte Carlo baseline on a few scenarios as a regression check for the weights.

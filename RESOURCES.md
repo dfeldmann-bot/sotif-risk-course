@@ -23,6 +23,16 @@
 - [Schaller et al., "Addressing SOTIF with a runtime monitor ensemble for AI-based perception systems", *Discover Artificial Intelligence* 6:1172 (2026)](https://doi.org/10.1007/s44163-026-02186-z)
   Maps a monitor ensemble onto SOTIF clauses 6–13; monitors as proxy evidence when 10⁻⁹/h targets are untestable. Use for: lessons 1 (motivation) and 7.
 
+### Added 2026-10-27 (post-2022 methods; verification)
+- ISO 21448:2022(E), now used directly (licensed copy). Pinpoint pages in `report/VERIFICATION.md` (printed page = PDF page − 8).
+- Ramdas, Grünwald, Vovk, Shafer (2023). *Game-theoretic statistics and safe anytime-valid inference*. Statistical Science 38(4). arXiv:2210.01948. Use for: continuous field monitoring with valid error control at any stopping time.
+- Feng et al. (2023). *Dense reinforcement learning for safety validation of autonomous vehicles*. Nature 615:620–627. Use for: accelerated testing of rare events.
+- Delecki, Katz, Kochenderfer (2024). State-dependent importance sampling proposals. arXiv:2412.02154. Use for: adaptive IS in sequential scenarios.
+- Moss et al. (2023/24). *Bayesian safety validation for failure probability estimation of black-box systems*. arXiv:2305.02449.
+- Kusano et al. (2024; 2025). Waymo rider-only crash rates vs aligned human benchmarks. arXiv:2312.12675; arXiv:2505.01515. Use for: lagging SPIs and acceptance criteria.
+- Berend & Kontorovich. *On the concentration of the missing mass*. arXiv:1210.3248. Use for: upper bound on the probability of unseen scenario types.
+- Glasmacher et al., completeness argumentation for scenario catalogues; de Gelder et al. (2024), scenario coverage metrics; ASAM OpenLABEL 1.0; ISO 34504:2024 scenario tags. Use for: doc 07.
+
 ## Wisdom (Communities)
 
 - [Safety-Critical Systems Club (SCSC), Safety of Autonomous Systems Working Group](https://scsc.uk)
@@ -34,5 +44,5 @@
 - Conferences: SAFECOMP + WAISE workshop; IEEE IV.
 
 ## Gaps
-- No free, authoritative text of the Annex C worked examples; rely on the licensed standard.
-- Copula-based scenario modelling in the AV context: a good tutorial-grade source is still needed (search before lesson 5).
+- ~~No free text of the Annex C worked examples~~: resolved, licensed ISO 21448:2022(E) supplied 2026-10-26.
+- Copula-based scenario modelling in the AV context: a good tutorial-grade source is still needed (search before lesson 5). Interim: Joe (2014), *Dependence Modeling with Copulas*; doc 03.

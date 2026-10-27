@@ -24,11 +24,14 @@ R = Σ share × HB rate × P(collision | HB) × P(injury)
 - **Scenario frequencies and parameter distributions:** ν = count/hours with a Poisson/Gamma interval; marginals plus copula. For the copula: Kendall τ per pair → ρ = sin(πτ/2), a positive-definiteness check and a tail-dependence check.
 - **Conditional probabilities:** HB per triggering-condition occurrence (binomial, Clopper–Pearson); collision given HB from near-miss surrogates.
 - **Extreme value analysis** on min TTC or similar proximity metrics: extrapolate near-miss frequency to crash frequency (Åsljung et al.; reviewed in Betschinske et al. 2025).
-- **Discovery rate of unknown scenarios** (Clause 11): the rate of occurrences that fit no scenario type. Good–Turing estimate of the probability that the next scenario is new ≈ n₁/N (types seen exactly once ÷ all occurrences).
+- **Discovery rate of unknown scenarios** (Clause 11): the rate of occurrences that fit no scenario type. Good–Turing estimate of the probability that the next scenario is new ≈ n₁/N (types seen exactly once ÷ all occurrences). This is a point estimate; for an upper bound add about √(ln(1/δ)/N) (Berend & Kontorovich, Theorem 1).
 - **Representativeness:** divergence between the tested and target ODD distributions per stratum (χ², Wasserstein).
-- **Change detection:** CUSUM or sequential tests on rates; rate ratios between software versions (exact conditional Poisson test).
+- **Change detection:** CUSUM or sequential tests on rates; rate ratios between software versions (exact conditional Poisson test). For continuous monitoring with valid error control at any stopping time, use confidence sequences / e-processes (safe anytime-valid inference, Ramdas et al. 2023).
+- **Benchmarks:** compare against human benchmarks aligned to the same vehicle types, road types and locations, by crash type (Kusano et al. 2025), not a single national statistic.
 
 ## 3. SPIs
+
+ISO 21448:2022 13.3 (p. 56) already asks, for higher levels of automation, for on-board monitoring that detects functional insufficiencies before accidents occur: violations of a minimum distance, scenarios close to triggering a system reaction, unexpected take-overs and scenarios leading to a minimal risk condition. These are leading SPIs.
 
 **UL 4600:** an SPI is *"a metric supported by evidence that uses a threshold comparison to condition a claim in a safety case"*, and *"relying solely on lagging indicators is not acceptable"* (quoted in Ratiu et al. 2024).
 
@@ -72,4 +75,7 @@ Leading SPIs occur 10³–10⁶ times more often. They detect drift within weeks
 - Koopman, *SPI vs KPI*, CMU lecture notes: https://users.ece.cmu.edu/~koopman/lectures/L124_SPI_vs_KPI.pdf
 - Betschinske et al. (2025), arXiv:2506.10363.
 - Schaller et al. (2026), *Discover Artificial Intelligence* 6:1172 (runtime monitors as leading evidence).
-- ISO 21448:2022, Clause 13 (operation phase).
+- ISO 21448:2022, 13.3 (pp. 56–57): on-board monitoring for higher automation (minimum-distance violations, near-triggering, take-overs, MRC), DSSAD/EDR, context evolution.
+- Ramdas, Grünwald, Vovk, Shafer (2023). Game-theoretic statistics and safe anytime-valid inference. arXiv:2210.01948.
+- Kusano et al. (2024, 2025). Waymo rider-only crash rates vs aligned human benchmarks. arXiv:2312.12675; arXiv:2505.01515.
+- Berend, Kontorovich. On the concentration of the missing mass. arXiv:1210.3248.

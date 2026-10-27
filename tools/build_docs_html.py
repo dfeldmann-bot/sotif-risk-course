@@ -959,13 +959,14 @@ def main():
 
 <h3>Counting critical runs is not a risk estimate</h3>
 {figure(f1, f"Toy cut-in. A uniform grid design puts {crit_frac:.1%} of its runs in the failure region, but the real-world probability of failure per cut-in is {p_true:.1e}, about 1,000× smaller. Only the weights \\(w_i\\) connect test runs to the real world. Non-critical runs are evidence too: they are the bulk of the sum.", 1)}
+<p>Post-2022 alternatives for the rare-event step: adaptive state-dependent IS proposals (Delecki et al. 2024, arXiv:2412.02154), dense reinforcement learning for accelerated testing (Feng et al. 2023, <i>Nature</i> 615:620) and Bayesian safety validation (Moss et al., arXiv:2305.02449). All keep the requirement that the sampling distribution, and hence the weights, be known.</p>
 <p>Falsification and criticality search find <em>triggering conditions</em> (Clause 10 → Clause 8). They do not estimate risk unless you can write down the distribution \\(q\\) they sampled from. Keep the two campaigns separate.</p>
 
 <h3>Importance sampling</h3>
-{figure(f2, f"Plain Monte Carlo needs thousands of runs before its first collision; importance sampling from a proposal \\(q\\) that over-samples critical conditions converges much earlier and stays unbiased. Report the effective sample size \\((\\sum w)^2/\\sum w^2\\) with every IS estimate. In the full example, 1,000 IS runs reproduce the 200,000-run plain estimate to a factor of {R_is/R_point:.2f}.", 2)}
+{figure(f2, f"Plain Monte Carlo needs thousands of runs before its first collision; importance sampling from a proposal \\(q\\) that over-samples critical conditions converges much earlier and stays unbiased. Report the effective sample size \\((\\sum w)^2/\\sum w^2\\) <em>and</em> the relative standard error \\(\\mathrm{{sd}}(w h)/(\\sqrt N\\,\\hat p)\\) with every IS estimate: Kish's ESS depends only on the weights, so for rare events it does not measure precision. In the full example, 1,000 IS runs reproduce the 200,000-run plain estimate to a factor of {R_is/R_point:.2f}.", 2)}
 
 <h3>Relation to Annex C</h3>
-<p>ISO 21448 Annex C.2 writes \\(A_H = R_{{HB}}\\cdot P(E\\mid HB)\\cdot P(\\bar C\\mid E)\\cdot P(S\\mid\\bar C)\\). Those factors are the scenario averages of the integral above. The scenario approach keeps the \\(\\theta\\)-dependence that Annex C averages away. That makes it more efficient, and also more demanding of data.</p>
+<p>ISO 21448:2022 C.2.1, Formula (C.1), p. 127, writes \\(A_H = R_{{HB}}\\cdot P_{{E|HB}}\\cdot P_{{C|E}}\\cdot P_{{S|C}}\\), where \\(P_{{C|E}}\\) is the probability of <em>not</em> controlling. Those factors are the scenario averages of the integral above. The standard's own AEB example (C.2.2, pp. 127–134) already uses a Monte Carlo over trailing distance and reaction time, and C.5 (pp. 145–152) covers KDE fitting and importance sampling. The scenario approach keeps the \\(\\theta\\)-dependence that Annex C averages away. That makes it more efficient, and also more demanding of data.</p>
 
 <h2>3 · Relation to validation targets</h2>
 <p>The field-only approach has one target, \\(\\tau = -\\ln(1-C)/R_{{HB}}\\) (lesson 1). The scenario approach replaces it with one claim and several evidence targets:</p>
@@ -1033,13 +1034,15 @@ def main():
 </ul>
 {figure(f8, "Synthetic min-TTC per encounter. Only the lowest 5% are used to fit the tail, which is then extrapolated to TTC values never observed. This is how near misses can say something about crash frequency. The answer is only as good as the threshold choice and the extreme-value assumptions (Åsljung et al.; reviewed in Betschinske et al. 2025).", 7)}
 <ul>
-<li><strong>Discovery rate of unknown scenarios</strong> (Clause 11). Good–Turing estimate of the probability that the next scenario is of an unseen type: \\(\\hat P_{{\\text{{new}}}} \\approx n_1/N\\) (types seen exactly once ÷ all occurrences).</li>
+<li><strong>Discovery rate of unknown scenarios</strong> (Clause 11). Good–Turing estimate of the probability that the next scenario is of an unseen type: \\(\\hat P_{{\\text{{new}}}} \\approx n_1/N\\) (types seen exactly once ÷ all occurrences). This is a point estimate; an upper confidence bound adds about \\(\\sqrt{{\\ln(1/\\delta)/N}}\\) (Berend &amp; Kontorovich).</li>
 <li><strong>Representativeness</strong>: \\(\\chi^2\\) or Wasserstein divergence between tested and target ODD distributions per stratum.</li>
-<li><strong>Change detection</strong>: CUSUM or sequential tests on rates; exact conditional Poisson test for software-version rate ratios.</li>
+<li><strong>Change detection</strong>: CUSUM or sequential tests on rates; exact conditional Poisson test for software-version rate ratios. For continuous monitoring with valid error control at any stopping time, use confidence sequences / e-processes (safe anytime-valid inference, Ramdas et al. 2023, arXiv:2210.01948).</li>
+<li><strong>Benchmarks</strong>: compare lagging SPIs with human benchmarks aligned to the same vehicle types, road types and locations, by crash type (Kusano et al. 2025, arXiv:2505.01515), not with one national statistic.</li>
 </ul>
 
 <h2>3 · Safety performance indicators</h2>
 <div class="callout"><b>UL 4600:</b> an SPI is <i>“a metric supported by evidence that uses a threshold comparison to condition a claim in a safety case”</i>, and <i>“relying solely on lagging indicators is not acceptable”</i> (quoted in Ratiu et al. 2024). <b>Koopman:</b> a KPI asks <i>how well do we drive</i>; an SPI asks <i>how often are we potentially unsafe</i>.</div>
+<p>ISO 21448:2022 13.3 (p. 56) already asks, for higher automation, for on-board monitoring that detects functional insufficiencies before accidents: minimum-distance violations, scenarios close to triggering a reaction, unexpected take-overs, and scenarios ending in a minimal risk condition. These are leading SPIs; DSSAD/EDR data (p. 57) feed the lagging ones.</p>
 <p>Each SPI needs four things: (1) the safety-case claim it conditions; (2) the metric and its data source; (3) a threshold derived from the risk budget; (4) the response when it is breached. Responses: update the safety case, restrict operations (speed, geofence), update the system, or ground the fleet.</p>
 <div class="tbl-wrap"><table class="doc"><thead><tr><th>Type</th><th>SPI</th><th>Claim it conditions</th><th>Threshold</th></tr></thead><tbody>
 <tr><td>Lagging</td><td>rear-end collisions with ego struck, per h, by severity</td><td>overall validation target</td><td>\\(A_H\\)</td></tr>

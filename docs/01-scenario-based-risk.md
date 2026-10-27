@@ -43,11 +43,11 @@ h_i is the run outcome (0/1 harm, or P(S ≥ s | Δv_i)). Contribution of scenar
 - **Counting critical runs is not a risk estimate.** In a toy cut-in model, a uniform grid design flags 5.4% of runs as critical while the true probability per cut-in is 4.9 × 10⁻⁵. Only the weights w_i connect the runs to the real world.
 - **Non-critical runs are evidence.** They form the bulk of the sum.
 - **Falsification / criticality search** finds triggering conditions (Clause 10 → Clause 8 fixes). It does not estimate risk unless the sampling distribution q is known. Keep the two campaigns separate.
-- **Importance sampling** shifts q toward the critical region and corrects with w. Report the effective sample size (Σw)²/Σw² with every estimate. In the example, 1,000 IS runs reproduce the 200,000-run plain Monte Carlo estimate to within a factor of 0.73.
+- **Importance sampling** shifts q toward the critical region and corrects with w (ISO 21448:2022, C.5, Figs C.12–C.14, pp. 149–151). Report the effective sample size (Σw)²/Σw² *and* the relative standard error sd(w·h)/(√N·p̂) with every estimate: Kish's ESS depends only on the weights, so for rare events it does not measure precision (report Sec. 10). In the example, 1,000 IS runs reproduce the 200,000-run plain Monte Carlo estimate to within a factor of 0.73.
 
 ### Relation to Annex C
 
-ISO 21448 Annex C.2 writes A_H = R_HB · P(E|HB) · P(C̄|E) · P(S|C̄). Those factors are the scenario-averages of the integral above. The scenario approach keeps the θ-dependence that Annex C averages away. That makes it more efficient, and also data-hungrier.
+ISO 21448:2022 writes A_H = R_HB · P_E|HB · P_C|E · P_S|C, where P_C|E is the probability of *not* controlling (C.2.1, Formula (C.1), p. 127). Those factors are the scenario-averages of the integral above. The standard's own AEB example (C.2.2, pp. 127–134) already uses a Monte Carlo simulation over trailing distance and reaction time, and C.5 (pp. 145–152) describes fitting parameter distributions from naturalistic data and importance sampling. The scenario approach keeps the θ-dependence that Annex C averages away. That makes it more efficient, and also data-hungrier.
 
 ## 3. Relation to validation targets
 
@@ -74,7 +74,7 @@ Scenario-based testing **shrinks** field testing but does not remove it: coverag
 - **Zero events ≠ zero risk.** Contexts with 0 observed HB get 0% in the point estimate but dominate the evidence requirement.
 - **With 0–4 events per cell, point-estimate attribution is mostly Poisson noise.**
 - **Bonferroni over 120 estimated terms fails where a Bayesian posterior passes.** The choice of inference method, and the defensibility of its prior, decides the evidence plan.
-- **Optimal evidence allocation:** minimising total test hours Σ λ_k·G_j/B_j subject to Σ B_j = budget gives B_j ∝ √G_j (G_j = harm weight of cell j).
+- **Optimal evidence allocation:** minimising total test hours Σ λ_k,j·G_j/B_j subject to Σ B_j = budget gives **B_j ∝ √(λ_k,j·G_j)** (G_j = harm weight of cell j; λ_k,j = ½χ²_2(k_j+1)(C_b) differs per cell). An earlier version used B_j ∝ √G_j, which is optimal only if all cells have the same number of events (report Sec. 10).
 - **Screening by bound:** a scenario cannot contribute more than ν_ℓ · 1. Reserve a fraction ε of A_H; scenarios whose summed exposure bounds fit inside it need no simulation.
 
 ## 4. Parameterising a logical scenario
@@ -99,7 +99,8 @@ Scenario-based testing **shrinks** field testing but does not remove it: coverag
 
 ## References
 
-- ISO 21448:2022, Clauses 6, 9–11, Annex C. ISO 34502:2022.
+- ISO 21448:2022(E): 6.5 (pp. 30–31), 9.1 (p. 42), 11 (pp. 50–52), C.2.1 (pp. 126–127), C.2.2 (pp. 127–134), C.3 (pp. 134–137), C.5 (pp. 145–152), C.6 (pp. 153–158). ISO 34502:2022.
+- Delecki, Katz, Kochenderfer (2024), state-dependent IS proposals, arXiv:2412.02154; Feng et al. (2023), dense RL for safety validation, *Nature* 615:620–627; Moss et al. (2023/24), Bayesian safety validation, arXiv:2305.02449 (post-2022 alternatives; see report Sec. 10).
 - Putze et al. (2023), arXiv:2304.10170.
 - Betschinske et al. (2025), arXiv:2506.10363.
 - de Gelder (2022), PhD thesis, TU Delft.
