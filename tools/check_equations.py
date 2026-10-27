@@ -63,5 +63,5 @@ import openpyxl
 wb=openpyxl.load_workbook(__import__('os').path.join(__import__('os').path.dirname(__import__('os').path.abspath(__file__)),'unintended_braking_risk_example.xlsx'),data_only=True); vt=wb['Validation Targets']
 G=np.array([vt[f'D{r}'].value for r in range(6,26)]); k=np.array([vt[f'E{r}'].value for r in range(6,26)]); B=wb['Inputs']['B11'].value; Cb2=wb['Inputs']['B10'].value
 lam=chi2.ppf(Cb2,2*(k+1))/2
-T_used=(lam*G/(B*np.sqrt(G)/np.sqrt(G).sum())).sum(); T_opt=(np.sqrt(lam*G).sum())**2/B
-rec("Allocation B_j ~ sqrt(G_j)", abs(T_used-T_opt)/T_opt<1e-3, f"workbook rule gives {T_used:,.0f} h; correct rule B_j ~ sqrt(lambda_kj*G_j) gives {T_opt:,.0f} h ({(T_used/T_opt-1)*100:.1f}% more than necessary)")
+T_old=(lam*G/(B*np.sqrt(G)/np.sqrt(G).sum())).sum(); T_opt=(np.sqrt(lam*G).sum())**2/B; T_used=vt["I27"].value
+rec("Allocation B_j ~ sqrt(lambda_kj*G_j)", abs(T_used-T_opt)/T_opt<1e-3, f"workbook total {T_used:,.0f} h = optimum {T_opt:,.0f} h (old rule sqrt(G_j) would need {T_old:,.0f} h)")
