@@ -78,3 +78,19 @@ Checked on 27 October 2026. ISO 21448 was checked against ISO 21448:2022(E), fir
 ## Still not verified at location level (marked in the report)
 
 ISO/TS 5083, UL 4600 (via Betschinske et al. and Ratiu et al.); ISO 34502, 34503, 15622; Garwood 1936; Clopper & Pearson 1934; Good 1953; Chao 1984; Lindskog et al. 2003; Embrechts et al. 2003; Au & Beck 2001; Rubinstein & Kroese 2016; Hauer et al. 2019 (only via de Gelder et al. 2024); book chapters other than Owen Ch. 9–10, Nelsen Sec. 2.3/Ch. 5 and Coles Ch. 4 (from the books' standard tables of contents).
+
+## Equation audit (27 October 2026)
+
+Every equation was checked numerically with `tools/check_equations.py`; the results are in report Sec. 10, Table 9.
+
+| Equation | Result |
+|---|---|
+| Evidence allocation | **Was wrong, fixed.** B_j ∝ √G_j is optimal only for equal k_j. The correct rule is B_j ∝ √(λ_k,j·G_j). In the example it needs 564,084 h, against 567,814 h under the old rule. Fixed in the workbook (Validation Targets, new column M), doc 01 and the report (Eq. 9). |
+| Annex C decomposition | Correct under conditional-independence assumptions; a toy case with mismatched factors was 22 % off. |
+| Zero-failure τ | Correct (coverage simulated: 0.049 vs 0.05). The confidence refers to R_HB, not A_H, when the factors are estimated; the confidence split is now stated. |
+| χ² identity, union bound, copula density, ρ = sin(πτ/2), t-copula λ_U, Clopper–Pearson, Jeffreys, flat-prior identity | Correct. |
+| ESS | Correct formula, but misleading for rare events. The report now asks for the relative SE of p̂. |
+| Granularity bound | Correct only with TV = ½·L¹; the definition was added. |
+| Missing mass | A point estimate that had been used like a bound; the Berend–Kontorovich Theorem 1 upper bound was added. |
+
+Post-2022 alternatives cited, each verified at abstract or theorem level: Feng et al. 2023 (*Nature* 615:620–627); Kusano et al. 2024 and 2025 (Waymo aligned benchmarks); Ramdas et al. 2023 (safe anytime-valid inference); Moss et al. 2023/24 (Bayesian safety validation); Delecki et al. 2024 (state-dependent IS); Berend & Kontorovich (missing mass, Theorem 1).

@@ -388,18 +388,19 @@ put(gc, f"A{DL+3}", "Rank (Spearman) correlation of the final parameters equals 
 # =============== Validation Targets ===============
 vt = wb.create_sheet("Validation Targets")
 title(vt, "Validation targets per evidence cell", "How many replay hours each cell needs so the Bonferroni bound fits the budget.")
-put(vt, "A3", "Optimal allocation: minimise total hours Σ λ_k·G_j/B_j subject to Σ B_j = budget ⇒ B_j ∝ √G_j (Lagrange multiplier). Required hours assume no further events (observed k kept).", GREY)
+put(vt, "A3", "Optimal allocation: minimise total hours Σ λ_k,j·G_j/B_j subject to Σ B_j = budget ⇒ B_j ∝ √(λ_k,j·G_j) (Lagrange multiplier; λ_k,j = ½χ²_2(k_j+1)(C_b) differs per cell because k_j differs). Required hours assume no further events (observed k kept).", GREY)
 header(vt, 5, ["Cell", "Trigger context", "Speed band", "Harm weight G_j", "Events k so far", "Hours so far",
-               "Budget B_j (optimal, ∝ √G)", "λ target = B_j/G_j [1/h]", "Required hours (optimal)", "Additional hours",
-               "Budget B_j (equal split)", "Required hours (equal)"],
-           [7, 34, 12, 13, 9, 11, 14, 14, 14, 13, 14, 14])
+               "Budget B_j (optimal, ∝ √(λ_k·G))", "λ target = B_j/G_j [1/h]", "Required hours (optimal)", "Additional hours",
+               "Budget B_j (equal split)", "Required hours (equal)", "λ_k,j(C_b) = ½χ²"],
+           [7, 34, 12, 13, 9, 11, 14, 14, 14, 13, 14, 14, 12])
 for i in range(20):
     r, er = 6 + i, 6 + i
     put(vt, f"A{r}", f"='HB Evidence'!A{er}", GREEN); put(vt, f"B{r}", f"='HB Evidence'!B{er}", GREEN); put(vt, f"C{r}", f"='HB Evidence'!C{er}", GREEN)
     put(vt, f"D{r}", f"='HB Evidence'!J{er}", GREEN, SCI); put(vt, f"E{r}", f"='HB Evidence'!E{er}", GREEN, "0"); put(vt, f"F{r}", f"='HB Evidence'!D{er}", GREEN, INT)
-    put(vt, f"G{r}", f"=Inputs!$B$11*SQRT(D{r})/SUMPRODUCT(SQRT($D$6:$D$25))", BLACK, SCI)
+    put(vt, f"M{r}", f"=CHIINV(1-Inputs!$B$10,2*(E{r}+1))/2", BLACK, "0.000")
+    put(vt, f"G{r}", f"=Inputs!$B$11*SQRT(M{r}*D{r})/SUMPRODUCT(SQRT($M$6:$M$25*$D$6:$D$25))", BLACK, SCI)
     put(vt, f"H{r}", f"=G{r}/D{r}", BLACK, SCI)
-    put(vt, f"I{r}", f"=CHIINV(1-Inputs!$B$10,2*(E{r}+1))/2/H{r}", BLACK, INT)
+    put(vt, f"I{r}", f"=M{r}/H{r}", BLACK, INT)
     put(vt, f"J{r}", f"=MAX(0,I{r}-F{r})", BLACK, INT)
     put(vt, f"K{r}", "=Inputs!$B$11/20", BLACK, SCI)
     put(vt, f"L{r}", f"=CHIINV(1-Inputs!$B$10,2*(E{r}+1))/2/(K{r}/D{r})", BLACK, INT)

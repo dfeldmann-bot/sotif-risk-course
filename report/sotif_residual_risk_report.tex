@@ -135,7 +135,7 @@ Assuming that incidents have a Poisson distribution, ISO~21448 gives the driving
 \tau = \frac{-\ln(1-C)}{\RHB}
 \label{eq:tau}
 \end{equation}
-For $C\approx0.63$, $\tau = 1/A_H$ \cite[C.3, Note~2, p.~137]{iso21448}. The standard adds that $\tau$ ``can be quite large and therefore not practical in some cases'' and can be lessened with expert knowledge and MIL, SIL and HIL kilometres \cite[C.3, p.~137]{iso21448}; Betschinske et al.\ call it the real-world driving requirement \cite[Sec.~III-C, item~5, Eq.~(5)]{betschinske2025}. Betschinske et al.\ write the test as $H_0\!: R > A_H$ against $H_1\!: R\le A_H$ with the type-I error bound $P(X\le k)\le\alpha$, $\lambda = A_H\tau_k$ \cite[Sec.~III-C, Eqs.~(3)--(4)]{betschinske2025}.
+For $C\approx0.63$, $\tau = 1/A_H$ \cite[C.3, Note~2, p.~137]{iso21448}. Equation~\eqref{eq:tau} gives confidence $C$ about $\RHB$ only; it transfers to $A_H$ only if the factors of Eq.~\eqref{eq:annexc} are known exactly. With estimated factors, use their upper bounds and split the confidence, $\tau=-\ln(1-C_1)\,\prod P^{U}/A_H$ at overall confidence $\ge C_1+C_2-1$, as Betschinske et al.\ do for a decomposed hazardous behaviour \cite[Sec.~V, Eq.~(9)]{betschinske2025}. The standard adds that $\tau$ ``can be quite large and therefore not practical in some cases'' and can be lessened with expert knowledge and MIL, SIL and HIL kilometres \cite[C.3, p.~137]{iso21448}; Betschinske et al.\ call it the real-world driving requirement \cite[Sec.~III-C, item~5, Eq.~(5)]{betschinske2025}. Betschinske et al.\ write the test as $H_0\!: R > A_H$ against $H_1\!: R\le A_H$ with the type-I error bound $P(X\le k)\le\alpha$, $\lambda = A_H\tau_k$ \cite[Sec.~III-C, Eqs.~(3)--(4)]{betschinske2025}.
 
 \textbf{Notation trap.} In Formula~(C.7) $\alpha$ is the \emph{confidence} \cite[C.3, p.~137]{iso21448}, and Putze et al.\ follow this \cite[Sec.~IV-B(a)]{putze2023}. In C.6.3.2 the same standard writes the confidence as $1-\alpha$, i.e.\ $\alpha$ is an error level \cite[C.6.3.2, Example~1, p.~156]{iso21448}, and Betschinske et al.\ use $\alpha$ as type-I error, so their Eq.~(5) reads $-\ln(\alpha)/A_H$ \cite[Sec.~III-C, Eq.~(5)]{betschinske2025}. This report writes $C$ for confidence throughout.
 
@@ -196,7 +196,7 @@ De Gelder computes risk in the same spirit, by combining the outcome of virtual 
 \hat p_{\ell,s}=\frac1N\sum_{i=1}^N w_i h_i,\qquad w_i=\frac{f_\ell(\theta_i)}{q_\ell(\theta_i)},\qquad \mathrm{ESS}=\frac{(\sum_i w_i)^2}{\sum_i w_i^2}
 \label{eq:is}
 \end{equation}
-(importance sampling and effective sample size: \cite[Ch.~9]{owen2013}). ISO~21448 describes the same building blocks: parameter distributions determined from naturalistic driving data, e.g.\ by kernel density estimation \cite[C.5, Figures~C.9--C.11, pp.~146--148]{iso21448}, importance sampling that biases the test parameters towards riskier areas \cite[C.5, Figures~C.12--C.14, pp.~149--151]{iso21448}, and a final risk estimate ``based on the simulation results and depending on the acceptance criteria'' \cite[C.5, p.~151]{iso21448}. Zhao et al.\ apply importance sampling with cross-entropy-optimised proposals to lane-change scenarios from naturalistic data and report acceleration factors of about 2{,}000 to 20{,}000 \cite[Abstract]{zhao2017}.
+(importance sampling and effective sample size: \cite[Ch.~9]{owen2013}). Kish's ESS depends only on the weights, not on the outcome $h$; for rare-event estimates the relative standard error of $\hat p$, $\widehat{\mathrm{sd}}(w h)/(\sqrt N\,\hat p)$, is the quantity to report (Sec.~\ref{sec:audit}). ISO~21448 describes the same building blocks: parameter distributions determined from naturalistic driving data, e.g.\ by kernel density estimation \cite[C.5, Figures~C.9--C.11, pp.~146--148]{iso21448}, importance sampling that biases the test parameters towards riskier areas \cite[C.5, Figures~C.12--C.14, pp.~149--151]{iso21448}, and a final risk estimate ``based on the simulation results and depending on the acceptance criteria'' \cite[C.5, p.~151]{iso21448}. Zhao et al.\ apply importance sampling with cross-entropy-optimised proposals to lane-change scenarios from naturalistic data and report acceleration factors of about 2{,}000 to 20{,}000 \cite[Abstract]{zhao2017}.
 
 \subsection{Counting critical runs is not a risk estimate}
 Figure~\ref{fig:toy} shows why. In a toy cut-in model, a uniform test design puts 5.4\% of its runs in the failure region, while the real-world probability of failure per cut-in is $4.9\times10^{-5}$ \own{Fig.~\ref{fig:toy}\synthetic}. Non-critical runs are evidence too. Falsification and criticality search find triggering conditions (Clause~10), but do not estimate risk unless $q$ is known. Figure~\ref{fig:conv} shows importance sampling converging long before plain Monte Carlo sees its first collision.
@@ -352,7 +352,12 @@ On 200{,}000 proposal draws the mean weight is 0.996, and the IS estimate (0.016
 \end{figure}
 
 \subsection{Evidence needed}
-Minimising total test hours $\sum_j \lambda_k G_j/B_j$ subject to $\sum_j B_j=B$, with $G_j$ the harm weight of cell $j$, gives $B_j\propto\sqrt{G_j}$ and $T_{\text{total}}=\lambda_k(\sum_j\sqrt{G_j})^2/B$ \own{Lagrange multiplier}. For the Bonferroni claim, 567{,}800~h are required against 73{,}500~h available (Fig.~\ref{fig:targets}).
+Minimising total test hours $\sum_j \lambda_{k,j} G_j/B_j$ subject to $\sum_j B_j=B$, with $G_j$ the harm weight of cell $j$ and $\lambda_{k,j}=\tfrac12\chi^2_{2(k_j+1)}(C_b)$ its Poisson factor, gives
+\begin{equation}
+B_j = B\,\frac{\sqrt{\lambda_{k,j}G_j}}{\sum_i\sqrt{\lambda_{k,i}G_i}},\qquad T_{\text{total}}=\frac{\big(\sum_j\sqrt{\lambda_{k,j}G_j}\big)^2}{B}
+\label{eq:alloc}
+\end{equation}
+\own{Lagrange multiplier}. For the Bonferroni claim, 564{,}100~h are required against 73{,}500~h available (Fig.~\ref{fig:targets}). (An earlier version used $B_j\propto\sqrt{G_j}$, which is optimal only if all cells have the same $k_j$; Sec.~\ref{sec:audit}.)
 \begin{figure}[H]\centering
 \includegraphics[width=0.86\linewidth]{figures/f05_evidence_targets.pdf}
 \caption{Replay hours per evidence cell, available versus required under the square-root allocation\synthetic.}
@@ -475,7 +480,7 @@ ISO~34503 specifies the ODD taxonomy \cite[location not verified]{iso34503} and 
 \begin{equation}
 |\Delta R_c|=\nu_c\Big|\int_c p(\theta)\big(f^{\text{dep}}_c-f^{\text{test}}_c\big)d\theta\Big|\le \nu_c\,(p^{\max}_c-p^{\min}_c)\,\mathrm{TV}\big(f^{\text{dep}}_c,f^{\text{test}}_c\big)
 \end{equation}
-\own{derived}. Classes are refined until the sum over classes fits a reserved share $\delta$ of the budget. In the example, $P(\text{collision}\mid\mathrm{HB})$ falls from 0.137 to 0.030 inside the shortest headway class, while the 2--3~s class is flat (Fig.~\ref{fig:gran}).
+where $\mathrm{TV}(f,g)=\sup_A|P_f(A)-P_g(A)|=\tfrac12\int|f-g|$ is the total-variation distance (the bound uses $\int(f-g)=0$ and fails by a factor 2 if TV is read as the $L^1$ distance) \own{derived}. Classes are refined until the sum over classes fits a reserved share $\delta$ of the budget. In the example, $P(\text{collision}\mid\mathrm{HB})$ falls from 0.137 to 0.030 inside the shortest headway class, while the 2--3~s class is flat (Fig.~\ref{fig:gran}).
 \begin{figure}[H]\centering
 \includegraphics[width=0.86\linewidth]{figures/f23_granularity.pdf}
 \caption{$P(\text{collision}\mid\mathrm{HB})$ on a 0.1~s grid against current headway classes\synthetic.}
@@ -509,7 +514,7 @@ For leg~3, the Good--Turing estimate of the probability that the next occurrence
 \hat M_0=\frac{f_1}{N},\qquad \hat S=S_{\text{obs}}+\frac{f_1(f_1-1)}{2(f_2+1)},\qquad R_{\text{unknown}}\lesssim \hat M_0\,\nu_{\text{tot}}\,\bar p_{\text{unk}}
 \label{eq:unk}
 \end{equation}
-with $f_1,f_2$ the numbers of types seen once or twice and $N$ the number of occurrences.
+with $f_1,f_2$ the numbers of types seen once or twice and $N$ the number of occurrences. $\hat M_0$ is a point estimate. For an upper confidence bound, the missing mass $U_N$ satisfies $P(U_N > E\,U_N+\varepsilon)\le e^{-N\varepsilon^2}$ \cite[Theorem~1]{berend2013}, so $U_N\le E\,U_N+\sqrt{\ln(1/\delta)/N}$ with probability at least $1-\delta$; a rigorous bound also accounts for the deviation of the Good--Turing estimate from $E\,U_N$ \cite[location not verified]{mcallester2000}. In the synthetic example ($N=200{,}000$, $\delta=0.05$) the concentration term $\sqrt{\ln 20/N}=3.9\times10^{-3}$ is larger than $\hat M_0=1.1\times10^{-3}$ itself \own{computed}: saturation data bound the unknown mass only weakly.
 \begin{figure}[H]\centering
 \includegraphics[width=\linewidth]{figures/f26_saturation.pdf}
 \caption{Synthetic: 1{,}000 scenario types with Zipf frequencies (exponent 1.8)\synthetic. After 200{,}000 occurrences, 731 types are seen and Chao1 estimates 902, a lower bound; the Good--Turing missing mass is $1.06\times10^{-3}$ (true $1.14\times10^{-3}$) \own{computed}.}
@@ -555,6 +560,34 @@ ACC is specified in ISO~15622 \cite[location not verified]{iso15622}; ISO~21448 
 \end{figure}
 
 %=====================================================================
+\section{Equation audit and post-2022 alternatives}\label{sec:audit}
+Every equation in this report was checked numerically (script in the repository, \texttt{tools/} and \texttt{report/}): coverage of the zero-failure test by simulation, the Poisson--$\chi^2$ identity for $k=0,\dots,9$, unbiasedness of the importance-sampling estimator and of the copula weights, the copula density against the multivariate normal density, $\rho=\sin(\pi\tau/2)$ by sampling, the TV bound on a test case, $\mathrm{ESS}/N=e^{-d\delta^2}$ by simulation, and the Clopper--Pearson and Jeffreys formulas. Table~\ref{tab:audit} lists the results. ISO~21448 was published in 2022 and its Annex~C methods predate it; the right-hand column names methods published since then.
+
+{\small
+\begin{longtable}{L{2.6cm}L{1.6cm}L{5.0cm}L{5.4cm}}
+\caption{Equation audit \own{numerical checks} and post-2022 alternatives.}\label{tab:audit}\\
+\toprule
+Equation & Status & Finding & More recent alternative\\\midrule\endfirsthead
+\toprule
+Equation & Status & Finding & More recent alternative\\\midrule\endhead
+Allocation, Eq.~\eqref{eq:alloc} & \textbf{was wrong, fixed} & $B_j\propto\sqrt{G_j}$ is optimal only for equal $k_j$; with the cells' own $\lambda_{k,j}$ the optimum is $B_j\propto\sqrt{\lambda_{k,j}G_j}$; the old rule needed 567{,}814~h instead of 564{,}084~h \own{computed} & --- \\
+Annex~C decomposition, Eq.~\eqref{eq:annexc} & correct under assumptions & exact only with properly conditioned factors; with factors from a different scenario mix a toy case was off by 22\% \own{computed} & estimate per scenario with Eq.~\eqref{eq:risk}; aligned human benchmarks by vehicle type, road type and location \cite[Abstract]{kusano2025} instead of one national statistic as in \cite[C.2.2.4, p.~131]{iso21448}\\
+Zero-failure $\tau$, Eq.~\eqref{eq:tau} & correct, incomplete & confidence refers to $\RHB$, not $A_H$, when factors are estimated (Sec.~3.2); fixed sample size, no optional continuation & safe anytime-valid inference: e-processes and confidence sequences allow ``optional stopping or continuation for any reason'' \cite[Abstract]{ramdas2023}; SPRT \cite[Sec.~V]{betschinske2025}\\
+$k$-failure plan, Eq.~\eqref{eq:chi2} & correct & verified for $k=0$--9 & same as above\\
+Union bound, Eq.~\eqref{eq:bonf}; claim, Eq.~\eqref{eq:claim} & correct, conservative & Bonferroni over 120 terms fails where a joint posterior passes (Sec.~\ref{sec:example}) & Bayesian joint posterior or hierarchical model; Bayesian safety validation with probabilistic surrogates and importance sampling \cite[Abstract]{moss2023}\\
+IS estimator and ESS, Eq.~\eqref{eq:is} & correct; ESS misleading & Kish's ESS ignores $h$; in a test case ESS/N was 0.11 while the relative SE was 0.9\%; at $d=15$ the finite-sample ESS overestimated $e^{-d\delta^2}$ by 1.8$\times$ \own{computed} & adaptive, state-dependent IS proposals for sequential systems \cite[Abstract]{delecki2024}; dense RL editing out non-critical states, 10$^3$--10$^5$ times faster evaluation \cite[Abstract]{feng2023}\\
+Copula density; $\rho=\sin(\pi\tau/2)$; $t$-copula $\lambda_U$ & correct & verified numerically & vine copulas for high dimension \cite[location not verified]{joe2014}\\
+Granularity bound & correct with TV $=\tfrac12L^1$ & definition was missing; now stated & ---\\
+Missing mass, Eq.~\eqref{eq:unk} & point estimate & was used like a bound & concentration bound \cite[Theorem~1]{berend2013} (Sec.~\ref{sec:l4})\\
+SPI drift detection ($\mu^*\approx 9.1$) & correct & power of the discrete test is not monotone in $\mu$; first crossing used & confidence sequences for continuous monitoring \cite{ramdas2023}\\
+Clopper--Pearson, Jeffreys, flat-prior identity & correct & $c=0$, $N=2000$: 7.77/2000 vs.\ $-\ln(1-C_b)=7.78$ & ---\\
+\bottomrule
+\end{longtable}
+}
+
+Field results now report crash rates with confidence intervals against benchmarks aligned to the same vehicle types, road types and locations \cite[Abstract]{kusano2025}, and treat them as ``a directional and continuous confidence growth indicator'' within a safety case \cite[Abstract]{kusano2024}, rather than as a single pass/fail mileage test of the kind in ISO~21448 C.2.2.
+
+%=====================================================================
 \section{Limitations}\label{sec:limits}
 \begin{itemize}
 \item All example data are synthetic; correlations, rates, distributions and the injury curve are illustrative.
@@ -596,6 +629,15 @@ All numbers marked \textit{this report} and all figures are reproducible from th
 \bibitem{koopman2022} P.~Koopman (2022). Safety Performance Indicators (SPIs) for Autonomous Vehicles. Lecture slides, Carnegie Mellon University. \url{https://users.ece.cmu.edu/~koopman/lectures/L124_SPI_vs_KPI.pdf}
 \bibitem{waymoinjury} Waymo. An omni-directional model of injury risk in planar crashes. \url{https://waymo.com/research/an-omni-directional-model-of-injury-risk-in-planar/}
 \bibitem{littlewood1997} B.~Littlewood, D.~Wright (1997). Some conservative stopping rules for the operational testing of safety-critical software. \emph{IEEE Transactions on Software Engineering} 23(11):673--683. Source of ISO~21448 Formula~(C.7).
+\bibitem{feng2023} S.~Feng, H.~Sun, X.~Yan, H.~Zhu, Z.~Zou, S.~Shen, H.~X.~Liu (2023). Dense reinforcement learning for safety validation of autonomous vehicles. \emph{Nature} 615:620--627. doi:10.1038/s41586-023-05732-2.
+\bibitem{kusano2024} K.~D.~Kusano, J.~M.~Scanlon, Y.-H.~Chen, T.~L.~McMurry, R.~Chen, T.~Gode, T.~Victor (2024). Comparison of Waymo rider-only crash data to human benchmarks at 7.1 million miles. \emph{Traffic Injury Prevention}, doi:10.1080/15389588.2024.2380786; arXiv:2312.12675.
+\bibitem{kusano2025} K.~D.~Kusano, J.~M.~Scanlon, Y.-H.~Chen, T.~L.~McMurry, T.~Gode, T.~Victor (2025). Comparison of Waymo rider-only crash rates by crash type to human benchmarks at 56.7 million miles. arXiv:2505.01515.
+\bibitem{ramdas2023} A.~Ramdas, P.~Grünwald, V.~Vovk, G.~Shafer (2023). Game-theoretic statistics and safe anytime-valid inference. \emph{Statistical Science} 38(4); arXiv:2210.01948.
+\bibitem{moss2023} R.~J.~Moss, M.~J.~Kochenderfer, M.~Gariel, A.~Dubois (2023/2024). Bayesian safety validation for failure probability estimation of black-box systems. arXiv:2305.02449; doi:10.2514/1.I011395.
+\bibitem{delecki2024} H.~Delecki, S.~M.~Katz, M.~J.~Kochenderfer (2024). Failure probability estimation for black-box autonomous systems using state-dependent importance sampling proposals. arXiv:2412.02154.
+\bibitem{berend2013} D.~Berend, A.~Kontorovich (2013). On the concentration of the missing mass. \emph{Electronic Communications in Probability}; arXiv:1210.3248.
+\bibitem{mcallester2000} D.~McAllester, R.~E.~Schapire (2000). On the convergence rate of Good--Turing estimators. \emph{COLT 2000}.
+\bibitem{joe2014} H.~Joe (2014). \emph{Dependence Modeling with Copulas.} CRC.
 \bibitem{garwood1936} F.~Garwood (1936). Fiducial limits for the Poisson distribution. \emph{Biometrika} 28:437--442.
 \bibitem{clopper1934} C.~J.~Clopper, E.~S.~Pearson (1934). The use of confidence or fiducial limits illustrated in the case of the binomial. \emph{Biometrika} 26:404--413.
 \bibitem{good1953} I.~J.~Good (1953). The population frequencies of species and the estimation of population parameters. \emph{Biometrika} 40:237--264.
