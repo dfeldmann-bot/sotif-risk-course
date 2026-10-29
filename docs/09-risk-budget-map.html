@@ -1,0 +1,230 @@
+<title>Risk Budget Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column, figures break out to a wider track; three-column map HB → HE → AC as the anchor figure */
+:root{
+  --bg:#f4f6f8; --panel:#ffffff; --ink:#141a22; --muted:#56606d; --rule:#d9dee5;
+  --accent:#1f4fa3; --accent-soft:#e3ebf8;
+  --s2:#b47b00; --s3:#cc4f1f; --s4:#a11d2a; --s2-soft:#f7ecd2; --s3-soft:#f8e1d6; --s4-soft:#f5d9dc;
+  --ok:#2f7d4f;
+  --display:"Newsreader", Georgia, "Times New Roman", serif;
+  --body:"IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141a; --panel:#171c24; --ink:#e7ebf0; --muted:#9aa5b3; --rule:#2a313c;
+  --accent:#7ea6ec; --accent-soft:#1c2a44;
+  --s2:#e0aa3a; --s3:#f08559; --s4:#f06b78; --s2-soft:#3a2f16; --s3-soft:#3d2419; --s4-soft:#3d1c22;
+  --ok:#6cc292; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141a; --panel:#171c24; --ink:#e7ebf0; --muted:#9aa5b3; --rule:#2a313c;
+  --accent:#7ea6ec; --accent-soft:#1c2a44;
+  --s2:#e0aa3a; --s3:#f08559; --s4:#f06b78; --s2-soft:#3a2f16; --s3-soft:#3d2419; --s4-soft:#3d1c22;
+  --ok:#6cc292; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+.col{max-width:680px}
+h1,h2{font-family:var(--display);font-weight:600;text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(32px,5vw,46px)}
+h2{font-size:26px;margin-bottom:10px}
+p{margin:0 0 12px}
+.lead{font-size:19px;color:var(--muted);max-width:640px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:20px}
+.scroll{overflow-x:auto}
+svg text{font-family:var(--body)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.formula{font:500 17px/1.5 var(--mono);background:var(--accent-soft);border-radius:8px;padding:14px 16px;overflow-x:auto;white-space:nowrap}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 24px;margin-top:14px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.sev{display:inline-block;font:500 12px/1 var(--mono);padding:4px 7px;border-radius:5px}
+.sev.s2{background:var(--s2-soft);color:var(--s2)} .sev.s3{background:var(--s3-soft);color:var(--s3)} .sev.s4{background:var(--s4-soft);color:var(--s4)}
+.rows{display:flex;flex-direction:column;gap:14px}
+.row{display:grid;grid-template-columns:150px minmax(0,1fr) 120px;gap:14px;align-items:center}
+.row .lab{font-size:14px}
+.track{height:22px;background:var(--bg);border-radius:4px;position:relative;overflow:hidden}
+.fill{height:100%;border-radius:4px}
+.val{font:500 14px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.bind{font:600 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--panel);background:var(--ink);padding:3px 6px;border-radius:4px;margin-left:6px}
+.note{font-size:14px;color:var(--muted);margin-top:12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px}
+.card h3{margin:0 0 4px;font:600 16px var(--body)}
+.big{font:500 30px/1.1 var(--display);margin:8px 0 2px}
+.stack{display:flex;height:24px;border-radius:4px;overflow:hidden;gap:2px;background:var(--bg)}
+.stack div{height:100%}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px}
+.steps li::before{content:counter(s);font:500 15px/34px var(--mono);text-align:center;border:1px solid var(--rule);border-radius:50%;width:34px;height:34px;background:var(--panel)}
+.steps b{display:block}
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.bad{border-left:3px solid var(--s3);border-radius:0;padding:4px 0 4px 14px}
+.good{border-left:3px solid var(--ok);border-radius:0;padding:4px 0 4px 14px}
+.src{font-size:14px;color:var(--muted)} .src li{margin-bottom:6px}
+a{color:var(--accent)}
+@media (max-width:560px){.row{grid-template-columns:96px minmax(0,1fr) 84px}.formula{font-size:14px}}
+</style>
+
+<div class="wrap">
+
+<header class="col">
+  <div class="eyebrow">SOTIF · validation targets</div>
+  <h1>Who may contribute how much</h1>
+  <p class="lead" style="margin-top:14px">Acceptance criteria are set per severity class. Hazardous events share them, and hazardous behaviours trigger the events. The budget split decides how much harm each behaviour is allowed to cause. That allowance is its validation target.</p>
+</header>
+
+<section>
+  <div class="col"><h2>The map</h2>
+  <p>Read it right to left. Each acceptance criterion (AC) has one budget. Every hazardous event (HE) passes a fraction of its occurrences to each AC, and every hazardous behaviour (HB) produces each HE at some rate.</p></div>
+  <div class="panel scroll">
+  <svg viewBox="0 0 860 400" width="100%" style="min-width:640px" role="img" aria-label="Map from two hazardous behaviours through three hazardous events to three severity acceptance criteria">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+    <text x="100" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1.2">HAZARDOUS BEHAVIOUR</text>
+    <text x="430" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1.2">HAZARDOUS EVENT</text>
+    <text x="750" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1.2">ACCEPTANCE CRITERION</text>
+    <g fill="none" stroke="var(--muted)" stroke-width="1.2">
+      <path d="M180 120 C 260 120, 270 90, 340 90" marker-end="url(#ar)"/>
+      <path d="M180 120 C 260 120, 270 210, 340 210" marker-end="url(#ar)"/>
+      <path d="M180 280 C 260 280, 270 100, 340 100" marker-end="url(#ar)"/>
+      <path d="M180 280 C 260 280, 270 330, 340 330" marker-end="url(#ar)"/>
+    </g>
+    <g fill="none" stroke-width="1.1" opacity=".75">
+      <path d="M520 90 C 590 90, 600 90, 670 90" stroke="var(--s2)"/><path d="M520 95 C 590 95, 600 205, 670 205" stroke="var(--s3)"/><path d="M520 100 C 590 100, 600 320, 670 320" stroke="var(--s4)"/>
+      <path d="M520 205 C 590 205, 600 95, 670 95" stroke="var(--s2)"/><path d="M520 210 C 590 210, 600 210, 670 210" stroke="var(--s3)"/><path d="M520 215 C 590 215, 600 325, 670 325" stroke="var(--s4)"/>
+      <path d="M520 325 C 590 325, 600 100, 670 100" stroke="var(--s2)"/><path d="M520 330 C 590 330, 600 215, 670 215" stroke="var(--s3)"/><path d="M520 335 C 590 335, 600 330, 670 330" stroke="var(--s4)"/>
+    </g>
+    <g>
+      <rect x="20" y="88" width="160" height="64" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="100" y="114" text-anchor="middle" font-size="15" font-weight="600" fill="var(--ink)">HB1</text>
+      <text x="100" y="134" text-anchor="middle" font-size="13" fill="var(--muted)">phantom braking</text>
+      <rect x="20" y="248" width="160" height="64" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="100" y="274" text-anchor="middle" font-size="15" font-weight="600" fill="var(--ink)">HB2</text>
+      <text x="100" y="294" text-anchor="middle" font-size="13" fill="var(--muted)">late braking</text>
+    </g>
+    <g>
+      <rect x="340" y="62" width="180" height="64" rx="8" fill="var(--panel)" stroke="var(--rule)"/>
+      <text x="430" y="88" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)">HE1 urban rear-end</text>
+      <text x="430" y="108" text-anchor="middle" font-size="12" fill="var(--muted)">dense traffic, low Δv</text>
+      <rect x="340" y="178" width="180" height="64" rx="8" fill="var(--panel)" stroke="var(--rule)"/>
+      <text x="430" y="204" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)">HE2 highway rear-end</text>
+      <text x="430" y="224" text-anchor="middle" font-size="12" fill="var(--muted)">high Δv</text>
+      <rect x="340" y="298" width="180" height="64" rx="8" fill="var(--panel)" stroke="var(--rule)"/>
+      <text x="430" y="324" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)">HE3 urban turning</text>
+      <text x="430" y="344" text-anchor="middle" font-size="12" fill="var(--muted)">medium Δv</text>
+    </g>
+    <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">
+      <text x="236" y="100">w 6·10⁻³</text><text x="272" y="236">w 1.5·10⁻²</text>
+      <text x="190" y="258">w 1.2·10⁻²</text><text x="236" y="322">w 4·10⁻³</text>
+    </g>
+    <g>
+      <rect x="670" y="66" width="170" height="54" rx="8" fill="var(--s2-soft)" stroke="var(--s2)"/>
+      <text x="755" y="90" text-anchor="middle" font-size="14" font-weight="600" fill="var(--s2)">MAIS2+</text>
+      <text x="755" y="109" text-anchor="middle" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--s2)">≤ 10⁻⁷ /h</text>
+      <rect x="670" y="182" width="170" height="54" rx="8" fill="var(--s3-soft)" stroke="var(--s3)"/>
+      <text x="755" y="206" text-anchor="middle" font-size="14" font-weight="600" fill="var(--s3)">MAIS3+</text>
+      <text x="755" y="225" text-anchor="middle" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--s3)">≤ 10⁻⁸ /h</text>
+      <rect x="670" y="298" width="170" height="54" rx="8" fill="var(--s4-soft)" stroke="var(--s4)"/>
+      <text x="755" y="322" text-anchor="middle" font-size="14" font-weight="600" fill="var(--s4)">Fatal</text>
+      <text x="755" y="341" text-anchor="middle" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--s4)">≤ 10⁻⁹ /h</text>
+    </g>
+    <text x="595" y="384" text-anchor="middle" font-size="12" fill="var(--muted)">coloured lines carry the fraction π = P(severity ≥ class | HE)</text>
+  </svg>
+  </div>
+  <div class="legend col">
+    <div><b>w</b> HE occurrences per unit HB rate: exposure of the situation × P(not controlled)</div>
+    <div><b>π</b> share of an HE's outcomes that reach a severity class, from its Δv distribution and an injury-risk curve</div>
+    <div><b>r</b> the HB rate you test for. Its allowed maximum is the validation target</div>
+  </div>
+</section>
+
+<section class="col">
+  <h2>The one rule</h2>
+  <p>For every acceptance criterion, add up the harm arriving from all behaviours through all events. The sum must stay within the budget.</p>
+  <div class="formula">Σ<sub>b</sub> r<sub>b</sub> · W<sub>b,s</sub> ≤ A<sub>s</sub> &nbsp; with &nbsp; W<sub>b,s</sub> = Σ<sub>e</sub> w<sub>b,e</sub> · π<sub>e,s</sub> &nbsp; for every AC s</div>
+  <p class="note">The events drop out into W. You need them to compute the weights and for traceability, but the budget is split over the behaviours, because the behaviours are what you test.</p>
+</section>
+
+<section>
+  <div class="col"><h2>One event, three criteria</h2>
+  <p>HE2 (highway rear-end) produces all three severities. Each criterion allows a different rate of HE2. The strictest one decides, and here that is the fatal class, not MAIS2+.</p></div>
+  <div class="panel">
+    <div class="rows" id="sevrows">
+      <div class="row"><div class="lab"><span class="sev s2">MAIS2+</span> π = 0.30</div><div class="track"><div class="fill" style="width:100%;background:var(--s2)"></div></div><div class="val">3.3·10⁻⁷</div></div>
+      <div class="row"><div class="lab"><span class="sev s3">MAIS3+</span> π = 0.08</div><div class="track"><div class="fill" style="width:37.5%;background:var(--s3)"></div></div><div class="val">1.25·10⁻⁷</div></div>
+      <div class="row"><div class="lab"><span class="sev s4">Fatal</span> π = 0.01</div><div class="track"><div class="fill" style="width:30%;background:var(--s4)"></div></div><div class="val">1.0·10⁻⁷<span class="bind">binds</span></div></div>
+    </div>
+    <p class="note">Allowed HE2 rate per criterion = A<sub>s</sub> / π<sub>s</sub>, per hour, if HE2 had each budget to itself. Checking MAIS2+ alone would overstate the margin by a factor of 3.3.</p>
+  </div>
+</section>
+
+<section>
+  <div class="col"><h2>The split, solved</h2>
+  <p>Minimising total test hours under all three rules at once gives one validation target per behaviour. Zero-failure targets at 95 % confidence, so hours = 3 / r.</p></div>
+  <div class="cards">
+    <div class="card">
+      <h3>HB1 phantom braking</h3>
+      <div class="big mono">≤ 5.6·10⁻⁶ /h</div>
+      <p class="note" style="margin:0 0 10px">≈ 540,000 h without a phantom brake</p>
+      <p style="font-size:14px;margin:0">Limited by <span class="sev s4">Fatal</span> and <span class="sev s3">MAIS3+</span>, through its highway event.</p>
+    </div>
+    <div class="card">
+      <h3>HB2 late braking</h3>
+      <div class="big mono">≤ 1.5·10⁻⁵ /h</div>
+      <p class="note" style="margin:0 0 10px">≈ 200,000 h without a late brake</p>
+      <p style="font-size:14px;margin:0">Feeds only urban events, so it gets more room in the severe classes.</p>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <p style="font-weight:600;margin-bottom:12px">Budget use per criterion at those targets</p>
+    <div class="rows">
+      <div class="row"><div class="lab"><span class="sev s2">MAIS2+</span></div><div class="stack"><div style="width:28%;background:var(--accent)"></div><div style="width:27%;background:var(--muted)"></div></div><div class="val">55 %</div></div>
+      <div class="row"><div class="lab"><span class="sev s3">MAIS3+</span></div><div class="stack"><div style="width:70%;background:var(--accent)"></div><div style="width:30%;background:var(--muted)"></div></div><div class="val">100 %</div></div>
+      <div class="row"><div class="lab"><span class="sev s4">Fatal</span></div><div class="stack"><div style="width:85%;background:var(--accent)"></div><div style="width:15%;background:var(--muted)"></div></div><div class="val">100 %</div></div>
+    </div>
+    <div class="legend" style="grid-template-columns:repeat(auto-fit,minmax(140px,max-content))">
+      <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);margin-right:6px"></span>HB1</div>
+      <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--muted);margin-right:6px"></span>HB2</div>
+      <div>empty = unused budget</div>
+    </div>
+    <p class="note">The two severe classes are full; MAIS2+ keeps 45 % slack. Splitting by MAIS2+ alone would ask for only 389,000 h in total, and the resulting rates would exceed the fatal criterion by a factor of 2.1.</p>
+  </div>
+</section>
+
+<section class="col">
+  <h2>How to use it on a full HARA</h2>
+  <ol class="steps">
+    <li><div><b>Fix a few severity classes per harm type.</b> Typically MAIS2+, MAIS3+ and fatal, cumulative, each with a limit per hour. Subtract the reserve for unknown triggering conditions.</div></li>
+    <li><div><b>Give every HE its severity fractions π.</b> From the Δv distribution in simulation and an injury-risk curve. One HE gets one fraction per class, not a single severity.</div></li>
+    <li><div><b>Estimate w for every HB–HE pair.</b> Exposure of the operational situation × P(not controlled). For 24 HBs and 160 HEs this is a sparse table.</div></li>
+    <li><div><b>Solve for the targets.</b> Minimise Σ c<sub>b</sub>·λ<sub>k,b</sub> / r<sub>b</sub> subject to the one rule. The output is r<sub>b</sub> per HB and which class binds it.</div></li>
+    <li><div><b>Freeze, test, sum.</b> Fix the targets before confirmatory testing. Pass if the sum of upper bounds stays within every criterion; one HB may overrun its target if another has slack.</div></li>
+  </ol>
+</section>
+
+<section>
+  <div class="col"><h2>Choices that change the answer</h2></div>
+  <div class="compare">
+    <div class="good"><b>Severity fractions per HE</b><p class="note" style="margin-top:4px">Each HE uses budget in proportion to the harm it really causes. Needs simulated Δv and an injury curve.</p></div>
+    <div class="bad"><b>Worst severity per HE</b><p class="note" style="margin-top:4px">ISO 26262 habit. Every occurrence counts as severe, which wastes most budget on frequent, mostly mild situations.</p></div>
+    <div class="bad"><b>One weighted measure</b><p class="note" style="margin-top:4px">For example fatality-equivalents. A single constraint, but the weights are a value judgement and many mild cases can hide a few fatal ones.</p></div>
+    <div class="bad"><b>Fixed share per HE</b><p class="note" style="margin-top:4px">Allowed if your process wants a number per safety goal. Adds constraints, so total testing can only grow.</p></div>
+  </div>
+  <p class="note col">Keep one convention: cumulative classes (fatal also counts toward MAIS3+ and MAIS2+) or disjoint ones. Mixing them double-counts or loses harm.</p>
+</section>
+
+<section class="col">
+  <h2>Sources</h2>
+  <ul class="src">
+    <li>Warg et al. (2020), <a href="https://www.es.mdh.se/pdf_publications/5963.pdf">The Quantitative Risk Norm</a>: consequence classes with their own budgets, incident types contributing fractions to several classes (Sec. III-A, III-B).</li>
+    <li>Werling et al. (2025), <a href="https://arxiv.org/abs/2503.20544">Safety integrity framework for automated driving</a>: risk acceptance criterion as injury frequency per injury level (Sec. 2), provisional budget per hazard (Sec. 3.3).</li>
+    <li>Putze et al. (2023), <a href="https://arxiv.org/abs/2304.10170">On Quantification for SOTIF Validation</a>: Bonferroni sum over harm, behaviour and triggering condition (Sec. IV-B).</li>
+    <li>ISO 21448:2022, Annex C.2.1: acceptance criterion per harm, decomposed into conditional probabilities.</li>
+    <li>All numbers on this page are synthetic and illustrative. The optimum was computed with a convex solver; derivation in <code>docs/08-risk-budget-split.md</code>.</li>
+  </ul>
+</section>
+
+</div>
