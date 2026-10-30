@@ -34,6 +34,7 @@
 - Glasmacher et al., completeness argumentation for scenario catalogues; de Gelder et al. (2024), scenario coverage metrics; ASAM OpenLABEL 1.0; ISO 34504:2024 scenario tags. Use for: doc 07.
 
 ### Added 2026-10-30 (risk budget split, validation targets, rare-event methods)
+Full-text analyses with section numbers and key figures: `docs/12-literature-review.md`. Feasibility at L4 scale: `docs/11-feasibility-at-scale.html`.
 Budget split and validation targets:
 - Hofmeister, Kinalzyk (AVL), *Acceptance Criteria, Validation Targets and Performance Targets in an ISO 21448 Conform Development Process* (thematic paper, ca. 2023; copy supplied by David). Global → hazard-based → scenario-class acceptance criteria, one validation target per scenario class, behavioural next to statistical criteria, performance targets as maturity gates. Qualitative, no allocation rule. Use for: structure of the budget hierarchy (doc 08).
 - Werling, Faller, Betz, Straub (2025). [Safety integrity framework for automated driving](https://arxiv.org/abs/2503.20544). arXiv:2503.20544. Provisional budget per hazard scenario as fraction of the risk acceptance criterion per injury level (Sec. 2, 3.3). Use for: budget split, best single read.

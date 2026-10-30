@@ -85,6 +85,14 @@ The split only plans the testing. The claim stays valid if these five rules hold
 - **Keep the reserves.** The reserve for unknown triggers is covered by field hours in which every hazardous behaviour maps to a known trigger; any unexplained one counts against the reserve (ISO 21448:2022, Clause 11).
 - **Re-run after every change.** Changing the ODD, the taxonomy or the software changes G_j and k_j, so the allocation is computed again.
 
+## When evidence is shared: equal tolerable rates
+
+The square-root rule assumes each cell or hazardous behaviour needs its *own* evidence (targeted replay, proving ground, per-condition recordings), so hours add up. Representative driving observes all hazardous behaviours at once, so the hours needed are the maximum over behaviours, not the sum. Minimising that maximum gives budget shares proportional to the harm per occurrence and the same tolerable rate for every behaviour:
+
+$$A_{H,i} = A_H\,\frac{P_{H|HB,i}}{\sum_j P_{H|HB,j}},\qquad R_{HB,i} = \frac{A_H}{\sum_j P_{H|HB,j}},\qquad \tau = \frac{\lambda\sum_j P_{H|HB,j}}{A_H}.$$
+
+Use the square-root rule for separate evidence streams and this rule for shared driving; a mixed plan uses the square-root rule across streams and equal rates within each stream. Derivation and scaling numbers: `11-feasibility-at-scale.html`, Eq. (2).
+
 ## Related approaches
 
 **Hierarchy of acceptance criteria (Hofmeister & Kinalzyk, AVL).** The global criterion is broken into hazard-based criteria, and those into scenario-class criteria. The linked scenario-class criteria must add up to their hazard-based criterion, and the hazard-based criteria to the global one. One scenario class can belong to several hazards, and each scenario class gets exactly one validation target. This is the same structure as the method above, stated in process terms. Two points to take over:
