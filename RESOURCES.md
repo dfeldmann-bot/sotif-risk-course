@@ -33,6 +33,29 @@
 - Berend & Kontorovich. *On the concentration of the missing mass*. arXiv:1210.3248. Use for: upper bound on the probability of unseen scenario types.
 - Glasmacher et al., completeness argumentation for scenario catalogues; de Gelder et al. (2024), scenario coverage metrics; ASAM OpenLABEL 1.0; ISO 34504:2024 scenario tags. Use for: doc 07.
 
+### Added 2026-10-30 (risk budget split, validation targets, rare-event methods)
+Budget split and validation targets:
+- Hofmeister, Kinalzyk (AVL), *Acceptance Criteria, Validation Targets and Performance Targets in an ISO 21448 Conform Development Process* (thematic paper, ca. 2023; copy supplied by David). Global → hazard-based → scenario-class acceptance criteria, one validation target per scenario class, behavioural next to statistical criteria, performance targets as maturity gates. Qualitative, no allocation rule. Use for: structure of the budget hierarchy (doc 08).
+- Werling, Faller, Betz, Straub (2025). [Safety integrity framework for automated driving](https://arxiv.org/abs/2503.20544). arXiv:2503.20544. Provisional budget per hazard scenario as fraction of the risk acceptance criterion per injury level (Sec. 2, 3.3). Use for: budget split, best single read.
+- Betschinske et al. (2025). [Towards more efficient quantitative safety validation of residual risk](https://arxiv.org/abs/2506.10363). arXiv:2506.10363. Reviews approaches for reducing field testing; none fully replaces it. Use for: limits of the "IS saves driving" argument.
+- Putze (2023). [Towards a Quantitative SOTIF Validation](https://elib.dlr.de/197126/1/2023-09-07-Towards_a_Quantitative_SOTIF_Validation.pdf). Hi-Drive summer school slides; visual companion to Putze et al. 2023.
+- Wang, Zhao, Yu, Zhang (2025). [Decomposition and Quantification of SOTIF Requirements for Perception](https://arxiv.org/abs/2501.10097). arXiv:2501.10097. Decomposition down to perception budgets with Shapley allocation. Use the method, not the numbers (an automated review flagged unmet targets).
+
+Acceptance criteria and release decisions:
+- Kröger (2025). [How safe should automated vehicles be?](https://www.sciencedirect.com/science/article/abs/pii/S3050475925001095). *Next Research* 2:100238. Proposes ~3·10⁻⁹ fatalities/h and ~4·10⁻⁸ fatalities or serious injuries/h. Use for: justifying A_H per severity.
+- Paterson et al. / Waymo (2025). [Determining Absence of Unreasonable Risk](https://arxiv.org/abs/2505.09880). arXiv:2505.09880. Twelve release acceptance criteria and governance; no numbers.
+
+Severity and rare-event estimation:
+- Wang (2022). [MAIS(05/08) Injury Probability Curves as Functions of Delta V](https://crashstats.nhtsa.dot.gov/Api/Public/Publication/813219). NHTSA DOT HS 813 219, Table 1-1 p. 2. Logistic coefficients per MAIS level for all, frontal and rear-end crashes. Use for: P_S|C.
+- Gyllenhammar, Åsljung, Khorsand Vakilzadeh, Rodrigues de Campos (2025). [Efficient Injury Risk Assessment for ADS Using Subset Simulation](https://maggyl.github.io/publications/sus-severity). SAFECOMP 2025. Several injury levels at once, >1000× fewer samples than Monte Carlo. Use for: alternative to IS for P_S|C.
+- de Gelder, Buermann, Op den Camp (2025). [Normalizing Flows vs. KDE for ADS risk](https://arxiv.org/abs/2507.22429). arXiv:2507.22429. Use for: estimating f for IS weights.
+- Qian et al. (2026). [Test case sampling optimization for safety validation of ADS](https://www.nature.com/articles/s41467-026-69675-8). *Nature Communications* 17:3114. 118 test cases from ~300,000 SHRP2 segments preserving the long tail.
+- de Gelder, Op den Camp (2024). [How (not) to parameterize scenarios](https://arxiv.org/abs/2409.01117). IEEE IAVVC 2024. Parameterization changes simulation outcomes.
+- Op den Camp, de Gelder (2025). [Operationalization of Scenario-Based Safety Assessment](https://arxiv.org/abs/2507.22433). arXiv:2507.22433. NATM with a scenario database.
+
+Perception evidence per triggering condition:
+- Patel, Jung (2026). [Uncertainty Evaluation ... Applicability of Performance Targets Across Triggering Conditions in ML-Based LiDAR Object Detection](https://arxiv.org/abs/2610.35092). arXiv:2610.35092. A performance target met under one condition is evidence under another only after a test there; the independent unit is the recorded sequence, not the frame; minimum units per condition from the zero-failure bound (Sec. 3.5, Eq. 5). Use for: evidence per trigger context (doc 08, doc 10 Eq. 7).
+
 ## Wisdom (Communities)
 
 - [Safety-Critical Systems Club (SCSC), Safety of Autonomous Systems Working Group](https://scsc.uk)

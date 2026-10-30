@@ -85,6 +85,19 @@ The split only plans the testing. The claim stays valid if these five rules hold
 - **Keep the reserves.** The reserve for unknown triggers is covered by field hours in which every hazardous behaviour maps to a known trigger; any unexplained one counts against the reserve (ISO 21448:2022, Clause 11).
 - **Re-run after every change.** Changing the ODD, the taxonomy or the software changes G_j and k_j, so the allocation is computed again.
 
+## Related approaches
+
+**Hierarchy of acceptance criteria (Hofmeister & Kinalzyk, AVL).** The global criterion is broken into hazard-based criteria, and those into scenario-class criteria. The linked scenario-class criteria must add up to their hazard-based criterion, and the hazard-based criteria to the global one. One scenario class can belong to several hazards, and each scenario class gets exactly one validation target. This is the same structure as the method above, stated in process terms. Two points to take over:
+
+- **Behavioural criteria next to the statistical ones**, e.g. "keep 1.5 m to cyclists". They become pass/fail criteria of each test case; the statistical criteria set hours and runs.
+- **Two reasons for splitting:** to avoid concentrating residual risk in parts of the ODD, and to plan testing. Too many scenario classes make each budget so small that testing becomes infeasible, which the square-root rule quantifies.
+
+**Evidence per triggering condition (Patel & Jung 2026).** A performance target shown under one condition (clear weather, near range) is evidence under another (rain, far range) only after a test under that condition. Evidence must count *independent* units: recorded sequences or separate drives, not frames or correlated minutes. The minimum per condition is the zero-failure bound
+
+$$n_j \ge \frac{-\ln(1-\alpha)}{R_{HB,i,j}} \approx \frac{3}{R_{HB,i,j}} \quad (\alpha = 95\,\%)$$
+
+in independent units, computed before recording. When the target is shown not to hold, the measures are a condition-specific threshold, an ODD restriction, a mitigation downstream, or a **reallocation of the budget at vehicle level**. In the split above, this means each trigger context j in R_HB,i = Σ_j ν_j R_HB,i,j needs its own independent evidence.
+
 ## Sources
 
 - Warg, F. et al. (2020). [The Quantitative Risk Norm – A Proposed Tailoring of HARA for ADS](https://www.es.mdh.se/pdf_publications/5963.pdf). DSN Workshops. Sec. III-A (consequence classes), III-B (incident types, MECE, budget condition).
@@ -94,5 +107,7 @@ The split only plans the testing. The claim stays valid if these five rules hold
 - MIL-HDBK-338, *Electronic Reliability Design Handbook* (equal, AGREE, feasibility-of-objectives, minimum-effort apportionment); summary at [Reliability Analytics](https://reliabilityanalytics.com/blog/?p=587).
 - Cochran, W. G. (1977). *Sampling Techniques*, 3rd ed. Wiley (optimum allocation with cost). Valliant, R., Dever, J., Kreuter, F. (2018). *Practical Tools for Designing and Weighting Survey Samples*, 2nd ed., ch. 3 ([Eq. 3.14 restated](https://bookdown.org/content/78e0de27-f084-46fb-be7c-c77a199d2abf/stratification.html)).
 - ISO 21448:2022(E), Clause 11; Annex C.6.3.3, p. 156.
+- Hofmeister, J., Kinalzyk, D. (AVL Software and Functions). *Acceptance Criteria, Validation Targets and Performance Targets in an ISO 21448 conform development process*. Thematic paper, ca. 2023. Sec. 2.2 (breakdown), Sec. 3 (validation targets), Sec. 4 (performance targets).
+- Patel, M., Jung, R. (2026). [Uncertainty Evaluation to Support SOTIF Analysis for Determining the Applicability of Performance Targets Across Triggering Conditions in ML-Based LiDAR Object Detection](https://arxiv.org/abs/2610.35092). arXiv:2610.35092. Sec. 3.5 (Eq. 5), Sec. 6.1 (Table 5).
 
 Locations for Cochran (1977) and MIL-HDBK-338 are given by chapter topic only; their section numbers were not checked.
