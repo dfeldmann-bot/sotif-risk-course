@@ -49,82 +49,89 @@ a{color:var(--link)}
 <h1>From Acceptance Criteria to Test Hours: Budget Allocation and the Role of Importance Sampling in SOTIF Validation</h1>
 <div class="meta">Course note · SOTIF risk course · 30 October 2026</div>
 
-<div class="abstract"><b>Abstract.</b> The residual risk of an automated driving function is the sum, over hazardous behaviours, of their rate times the harm each occurrence causes. Splitting this sum lets the rate be shown by driving and the harm per occurrence by simulation. The split, not importance sampling, is what reduces the required driving by a factor of order \(1/W\). Importance sampling only makes the simulated harm term cheap to estimate. We state the six equations that lead from the acceptance criteria to test hours and simulation runs.</div>
+<div class="abstract"><b>Abstract.</b> The notation follows ISO 21448:2022, Annex C.2.1 [1]. The acceptance criterion \(A_H\) for a harm \(H\) is shared by several hazardous behaviours \(HB_i\). Each behaviour receives a share \(A_{H,i}\), which by Formula (C.2) of [1] becomes a tolerable rate \(R_{HB,i}\) and, by Formula (C.7), a validation target \(\tau_i\). The decomposition into \(R_{HB}\) and the conditional probabilities \(P_{E|HB}\), \(P_{C|E}\), \(P_{S|C}\) is what reduces the required driving. Importance sampling only makes the conditional probabilities cheap to estimate in simulation.</div>
 
-<h2><span class="n">1</span>Risk per acceptance criterion</h2>
-<p>For each severity class \(s\) with acceptance criterion \(A_s\) (harmed persons per hour), the residual risk must satisfy</p>
-<div class="eq"><div>\[ R_s \;=\; \sum_{b} r_b \, W_{b,s} \;\le\; A_s . \]</div><div class="no">(1)</div></div>
-<p>Here \(r_b\) is the rate of hazardous behaviour \(b\) per hour and \(W_{b,s}\) the expected number of persons harmed at severity \(\ge s\) per occurrence of \(b\).</p>
+<h2><span class="n">1</span>Acceptance criterion and its decomposition</h2>
+<p>ISO 21448 decomposes the acceptance criterion of one hazardous behaviour as [1, Formula (C.1), p. 127]</p>
+<div class="eq"><div>\[ A_H \;=\; R_{HB}\cdot P_{E|HB}\cdot P_{C|E}\cdot P_{S|C} , \]</div><div class="no">(1)</div></div>
+<p>with \(R_{HB}\) the rate of the hazardous behaviour, \(P_{E|HB}\) the probability of being in an exposed scenario, \(P_{C|E}\) the probability that the hazardous behaviour is not controllable there, and \(P_{S|C}\) the probability of reaching the severity addressed by \(A_H\). By [1, C.2.1 NOTE 3], \(P_{S|C}\) may be cumulative (“severity at least at a certain degree”). We abbreviate the harm per occurrence of the hazardous behaviour as</p>
+<div class="eq"><div>\[ P_{H|HB} \;=\; P_{E|HB}\cdot P_{C|E}\cdot P_{S|C} , \qquad A_H = R_{HB}\cdot P_{H|HB}. \]</div><div class="no">(2)</div></div>
 
-<h2><span class="n">2</span>Harm per hazardous behaviour</h2>
-<p>Following ISO 21448 [1, C.2.1, Formula (C.1)], \(W\) decomposes over the hazardous events \(e\) that \(b\) can cause:</p>
-<div class="eq"><div>\[ W_{b,s} \;=\; \sum_{e} P_{E\mid b}\; P_{\bar C\mid E}\; \pi_{e,s}, \]</div><div class="no">(2)</div></div>
-<p>with exposure \(P_{E\mid b}\), probability of not controlling \(P_{\bar C\mid E}\), and severity fraction \(\pi_{e,s}\) obtained from \(\Delta v\) and an injury-risk function [2]. Each factor is below one, so typically \(W \sim 10^{-2}\text{–}10^{-4}\).</p>
+<h2><span class="n">2</span>Several hazardous behaviours share one acceptance criterion</h2>
+<p>When hazardous behaviours \(HB_1,\dots,HB_n\) can each lead to harm \(H\), possibly through several scenarios \(E\), their contributions add [3, Sec. IV-B]:</p>
+<div class="eq"><div>\[ \sum_{i=1}^{n} R_{HB,i}\cdot P_{H|HB,i} \;\le\; A_H ,\qquad P_{H|HB,i} \;=\; \sum_{E} P_{E|HB,i}\cdot P_{C|E}\cdot P_{S|C}. \]</div><div class="no">(3)</div></div>
+<p>Each harm \(H\) (e.g. MAIS2+, MAIS3+, fatal) has its own \(A_H\) and its own inequality (3); one hazardous behaviour appears in all of them with different \(P_{S|C}\).</p>
 
-<h2><span class="n">3</span>Budget allocation</h2>
-<p>The validation targets \(r_b^{\max}\) are chosen to minimise total test effort subject to (1):</p>
-<div class="eq"><div>\[ \min_{r_1,\dots,r_n}\; \sum_{b=1}^{n} \frac{c_b\,\lambda_{k,b}}{r_b} \]</div><div class="no">(3a)</div></div>
-<div class="eq"><div>\[ \text{subject to}\quad \sum_{b=1}^{n} r_b\,W_{b,s} \;\le\; A_s \quad \text{for all } s , \]</div><div class="no">(3b)</div></div>
-<p>where \(c_b\) is the cost of one test hour and \(\lambda_{k,b}\) the statistical factor of Eq. (4). Problem (3) is convex; a solver returns \(r_b^{\max}\) and the binding class for each \(b\). For a single criterion \(A\), the Lagrange condition gives the closed form</p>
-<div class="eq"><div>\[ B_b \;=\; A\,\frac{\sqrt{c_b\,\lambda_{k,b}\,W_b}}{\sum_{i=1}^{n}\sqrt{c_i\,\lambda_{k,i}\,W_i}}, \qquad r_b^{\max} \;=\; \frac{B_b}{W_b}. \]</div><div class="no">(3c)</div></div>
-<p>The budget \(B_b\) is what behaviour \(b\) may contribute; \(r_b^{\max}\) is its validation target. The equal split \(B_b = A/n\) is feasible but not optimal [3, 4].</p>
+<h2><span class="n">3</span>Budget split: the share \(A_{H,i}\) of each hazardous behaviour</h2>
+<p>The criterion is divided into shares \(A_{H,i}\) with \(\sum_i A_{H,i} = A_H\). Formula (C.2) of [1] then gives each behaviour its tolerable rate:</p>
+<div class="eq"><div>\[ R_{HB,i} \;=\; \frac{A_{H,i}}{P_{H|HB,i}} . \]</div><div class="no">(4)</div></div>
+<p>The shares are chosen to minimise the total test effort. With \(c_i\) the cost of one test hour for \(HB_i\) and \(\lambda_i\) the factor of Eq. (6),</p>
+<div class="eq"><div>\[ \min_{A_{H,1},\dots,A_{H,n}}\; \sum_{i=1}^{n} \frac{c_i\,\lambda_i\,P_{H|HB,i}}{A_{H,i}} \qquad\text{subject to}\qquad \sum_{i=1}^{n} A_{H,i} \;=\; A_H . \]</div><div class="no">(5a)</div></div>
+<p>The Lagrange condition gives the square-root rule</p>
+<div class="eq"><div>\[ A_{H,i} \;=\; A_H\,\frac{\sqrt{c_i\,\lambda_i\,P_{H|HB,i}}}{\sum_{j=1}^{n}\sqrt{c_j\,\lambda_j\,P_{H|HB,j}}} . \]</div><div class="no">(5b)</div></div>
+<p>For several harms \(H\) the problem is solved over the rates \(R_{HB,i}\) directly, with one constraint (3) per harm; for each behaviour one harm becomes binding. The equal split \(A_{H,i} = A_H/n\) is admissible but not optimal [4, 5].</p>
 
-<h2><span class="n">4</span>Driving or replay hours</h2>
-<p>Showing \(r_b \le r_b^{\max}\) at confidence \(C\) with \(k\) observed events requires</p>
-<div class="eq"><div>\[ T_b \;=\; \frac{\lambda_{k,b}}{r_b^{\max}}, \qquad \lambda_{k} \;=\; \tfrac12\,\chi^2_{2(k+1)}(C), \qquad \lambda_0 \approx 3 \text{ at } C = 95\% . \]</div><div class="no">(4)</div></div>
-<p>Targeted driving in trigger contexts \(j\) (low sun, spray, gantries) is admissible if re-weighted by the exposure shares \(\nu_j\):</p>
-<div class="eq"><div>\[ r_b \;=\; \sum_j \nu_j\, r_{b,j} . \]</div><div class="no">(5)</div></div>
+<h2><span class="n">4</span>Validation target per hazardous behaviour</h2>
+<p>Formula (C.7) of [1, p. 137], applied to \(R_{HB,i}\) instead of \(A_H\) as in the example of [1, C.2.1], gives the driving or replay time without any occurrence of \(HB_i\):</p>
+<div class="eq"><div>\[ \tau_i \;=\; \frac{-\ln(1-\alpha)}{R_{HB,i}} . \]</div><div class="no">(6a)</div></div>
+<p>Here \(\alpha\) is the confidence, as in [1]. If \(k\) occurrences are observed, \(-\ln(1-\alpha)\) is replaced by the Poisson factor</p>
+<div class="eq"><div>\[ \tau_i \;=\; \frac{\lambda_i}{R_{HB,i}},\qquad \lambda_i \;=\; \tfrac12\,\chi^2_{2(k+1)}(\alpha),\qquad \lambda_i\big|_{k=0} = -\ln(1-\alpha)\approx 3 \text{ at } \alpha = 95\% . \]</div><div class="no">(6b)</div></div>
+<p>Driving targeted at triggering conditions \(j\) (low sun, spray, gantries) is admissible if re-weighted with the exposure share \(\nu_j\) of each condition:</p>
+<div class="eq"><div>\[ R_{HB,i} \;=\; \sum_j \nu_j\, R_{HB,i,j} . \]</div><div class="no">(7)</div></div>
 
-<h2><span class="n">5</span>Simulation runs and importance sampling</h2>
-<p>The conditional probabilities in (2) are estimated by simulating logical scenarios with parameters \(\theta\) drawn from a proposal \(q\) that over-samples critical conditions, re-weighted to the real-world density \(f\) [1, C.5]:</p>
-<div class="eq"><div>\[ \hat P \;=\; \frac{1}{N}\sum_{i=1}^{N} \frac{f(\theta_i)}{q(\theta_i)}\,h_i, \qquad \mathrm{RSE} \;=\; \frac{\operatorname{sd}\!\big(h\,f/q\big)}{\sqrt{N}\,\hat P} . \]</div><div class="no">(6)</div></div>
-<p>\(h_i\) is the outcome of run \(i\) (collision indicator or injury probability). Non-critical runs enter with their weights and are part of the estimate. \(N\) is increased until the RSE is acceptable; the upper bound \(\bar W_{b,s}\) is used in the verdict.</p>
+<h2><span class="n">5</span>Conditional probabilities by simulation with importance sampling</h2>
+<p>\(P_{C|E}\) and \(P_{S|C}\) are estimated by simulating the scenarios \(E\) with parameters \(\theta\) drawn from a proposal \(q\) that over-samples critical conditions, re-weighted to the real-world density \(f\) [1, C.5, pp. 145–152]:</p>
+<div class="eq"><div>\[ \hat P \;=\; \frac{1}{N}\sum_{k=1}^{N} \frac{f(\theta_k)}{q(\theta_k)}\,h_k, \qquad \mathrm{RSE} \;=\; \frac{\operatorname{sd}\!\big(h\,f/q\big)}{\sqrt{N}\,\hat P} . \]</div><div class="no">(8)</div></div>
+<p>\(h_k\) is the outcome of run \(k\): not controlled (collision) for \(P_{C|E}\), or the injury probability from \(\Delta v\) for \(P_{S|C}\) [2]. Non-critical runs enter with their weights. \(N\) is increased until the RSE is acceptable; the upper bound \(\bar P_{H|HB,i}\) enters the verdict.</p>
 
 <h2><span class="n">6</span>Verdict</h2>
-<div class="eq"><div>\[ \sum_{b} \bar r_b\, \bar W_{b,s} \;\le\; A_s \quad \text{for all } s, \qquad \sum_i (1 - C_i) \;\le\; 1 - C . \]</div><div class="no">(7)</div></div>
-<p>Bars denote upper confidence bounds; the second condition is the Bonferroni split of the error probability over all estimated terms [3]. The verdict is on the sum: one behaviour may exceed \(r_b^{\max}\) if others leave slack.</p>
+<div class="eq"><div>\[ \sum_{i=1}^{n} \bar R_{HB,i}\cdot \bar P_{H|HB,i} \;\le\; A_H \quad\text{for every harm } H, \qquad \sum_m (1-\alpha_m) \;\le\; 1-\alpha . \]</div><div class="no">(9)</div></div>
+<p>Bars denote upper confidence bounds; the second condition is the Bonferroni split of the confidence over all estimated terms [3]. The verdict is on the sum: one behaviour may exceed its share \(A_{H,i}\) if others leave slack.</p>
 
 <h2><span class="n">7</span>Where the reduction comes from</h2>
-<div class="claim">Importance sampling does not reduce driving hours. The decomposition (1)–(2) does, by the factor \(1/W\); importance sampling reduces the number of simulation runs needed to estimate \(W\).</div>
+<div class="claim">Importance sampling does not reduce driving. The decomposition (1)–(4) does, by the factor \(1/P_{H|HB}\); importance sampling reduces the number of simulation runs needed to estimate \(P_{H|HB}\).</div>
 <div class="tw"><table>
-<caption><b>Table 1.</b> Required evidence for \(A = 10^{-7}\,\mathrm{h^{-1}}\), \(W = 5\cdot10^{-3}\), \(k=0\), \(C=95\%\).</caption>
+<caption><b>Table 1.</b> Required evidence for \(A_H = 10^{-7}\,\mathrm{h^{-1}}\), \(P_{H|HB} = 5\cdot10^{-3}\), no occurrences, \(\alpha = 95\%\).</caption>
 <thead><tr><th>Approach</th><th>Claim to show</th><th>Evidence</th><th class="num">Amount</th></tr></thead>
 <tbody>
-<tr><td>Direct field test</td><td>\(R \le A\)</td><td>driving</td><td class="num">\(3\cdot10^{7}\) h</td></tr>
-<tr><td>Decomposed, Eq. (4)</td><td>\(r \le A/W = 2\cdot10^{-5}\,\mathrm{h^{-1}}\)</td><td>driving / replay</td><td class="num">\(1.5\cdot10^{5}\) h</td></tr>
-<tr><td>\(W\) by plain Monte Carlo</td><td>\(\hat W\) with RSE \(\approx 10\%\)</td><td>simulation</td><td class="num">\(\sim 100/P\) runs</td></tr>
-<tr><td>\(W\) by importance sampling</td><td>same</td><td>simulation</td><td class="num">\(10^{3}\text{–}10^{4}\) runs</td></tr>
+<tr><td>Direct, Formula (C.7) on \(A_H\)</td><td>harm rate \(\le A_H\)</td><td>driving</td><td class="num">\(3\cdot10^{7}\) h</td></tr>
+<tr><td>Decomposed, Eq. (4) and (6a)</td><td>\(R_{HB} \le 2\cdot10^{-5}\,\mathrm{h^{-1}}\)</td><td>driving / replay</td><td class="num">\(1.5\cdot10^{5}\) h</td></tr>
+<tr><td>\(P_{H|HB}\) by plain Monte Carlo</td><td>\(\hat P_{H|HB}\) with RSE \(\approx 10\%\)</td><td>simulation</td><td class="num">\(\sim 100/P_{H|HB}\) runs</td></tr>
+<tr><td>\(P_{H|HB}\) by importance sampling</td><td>same</td><td>simulation</td><td class="num">\(10^{3}\text{–}10^{4}\) runs</td></tr>
 </tbody></table></div>
-<p class="note">The price of the reduction is that \(W\) must be credible: simulation validated against real outcomes, and \(f\) derived from naturalistic data.</p>
+<p class="note">The price of the reduction is that \(P_{H|HB}\) must be credible: simulation validated against real outcomes, and \(f\) derived from naturalistic data.</p>
 
-<h2><span class="n">8</span>Allocation of test cases to simulation and real driving</h2>
+<h2><span class="n">8</span>Which quantity is measured where</h2>
 <div class="tw"><table>
-<caption><b>Table 2.</b> Which quantity is measured where.</caption>
+<caption><b>Table 2.</b> Allocation of test cases to real driving and simulation.</caption>
 <thead><tr><th>Quantity</th><th>Source</th><th>Reason</th></tr></thead>
 <tbody>
-<tr><td>\(r_b\)</td><td>Real driving; open-loop replay of recordings through the release software</td><td>Hazardous behaviour originates in real sensor data</td></tr>
-<tr><td>\(P_{E\mid b}\), \(\nu_j\)</td><td>Fleet logs, naturalistic driving data</td><td>Frequencies of operational situations</td></tr>
-<tr><td>\(P_{\bar C\mid E}\), \(\pi_{e,s}\)</td><td>Simulation with importance sampling, Eq. (6)</td><td>Kinematics and other road users' reactions are simulable</td></tr>
+<tr><td>\(R_{HB,i}\)</td><td>Real driving; open-loop replay of recordings through the release software</td><td>Hazardous behaviour originates in real sensor data</td></tr>
+<tr><td>\(P_{E|HB}\), \(\nu_j\)</td><td>Fleet logs, naturalistic driving data</td><td>Frequencies of operational situations</td></tr>
+<tr><td>\(P_{C|E}\), \(P_{S|C}\)</td><td>Simulation with importance sampling, Eq. (8)</td><td>Kinematics and other road users' reactions are simulable</td></tr>
 <tr><td>Simulation validity</td><td>Proving ground, selected real runs</td><td>Correlation of simulated and real outcomes</td></tr>
 </tbody></table></div>
 
 <h2>Notation</h2>
 <dl>
-<dt>\(A_s\)</dt><dd>acceptance criterion for severity class \(s\) [h\(^{-1}\)]</dd>
-<dt>\(r_b,\ r_b^{\max}\)</dt><dd>rate of hazardous behaviour \(b\); its validation target [h\(^{-1}\)]</dd>
-<dt>\(W_{b,s}\)</dt><dd>persons harmed at severity \(\ge s\) per occurrence of \(b\)</dd>
-<dt>\(\pi_{e,s}\)</dt><dd>persons harmed at severity \(\ge s\) per collision in hazardous event \(e\)</dd>
-<dt>\(B_b\)</dt><dd>risk budget of \(b\) [h\(^{-1}\)]</dd>
-<dt>\(c_b\)</dt><dd>relative cost of one test hour for \(b\)</dd>
-<dt>\(\lambda_{k}\)</dt><dd>\(\tfrac12\chi^2_{2(k+1)}(C)\), Poisson upper-bound factor</dd>
-<dt>\(T_b\)</dt><dd>driving or replay hours for \(b\)</dd>
+<dt>\(A_H\)</dt><dd>acceptance criterion for harm \(H\) [h\(^{-1}\)] [1]</dd>
+<dt>\(A_{H,i}\)</dt><dd>share of \(A_H\) allocated to hazardous behaviour \(HB_i\) (risk budget)</dd>
+<dt>\(R_{HB,i}\)</dt><dd>tolerable rate of \(HB_i\), Formula (C.2) of [1] [h\(^{-1}\)]</dd>
+<dt>\(P_{E|HB}\)</dt><dd>probability of the exposed scenario given the hazardous behaviour [1]</dd>
+<dt>\(P_{C|E}\)</dt><dd>probability that the hazardous behaviour is not controllable in that scenario [1]</dd>
+<dt>\(P_{S|C}\)</dt><dd>probability of severity (at least) \(S\) given loss of control [1]</dd>
+<dt>\(P_{H|HB,i}\)</dt><dd>harm per occurrence of \(HB_i\), Eq. (3)</dd>
+<dt>\(\tau_i\)</dt><dd>validation target: driving or replay time for \(HB_i\), Formula (C.7) of [1]</dd>
+<dt>\(\alpha\)</dt><dd>confidence, as in [1]</dd>
+<dt>\(\lambda_i\)</dt><dd>\(\tfrac12\chi^2_{2(k+1)}(\alpha)\), Poisson factor; \(-\ln(1-\alpha)\) for \(k=0\)</dd>
+<dt>\(c_i\)</dt><dd>relative cost of one test hour for \(HB_i\)</dd>
+<dt>\(\nu_j\)</dt><dd>exposure share of triggering condition \(j\)</dd>
 <dt>\(f,\ q\)</dt><dd>real-world and proposal densities of scenario parameters \(\theta\)</dd>
-<dt>\(\nu_j\)</dt><dd>exposure share of trigger context \(j\)</dd>
 </dl>
 
 <h2>References</h2>
 <ol class="refs">
-<li>ISO 21448:2022, <i>Road vehicles — Safety of the intended functionality</i>. Annex C.2.1, Formula (C.1), pp. 126–127; Annex C.5, pp. 145–152.</li>
+<li>ISO 21448:2022, <i>Road vehicles — Safety of the intended functionality</i>. Annex C.2.1, Formulas (C.1)–(C.3), pp. 126–127; Annex C.3, Formula (C.7), p. 137; Annex C.5, pp. 145–152.</li>
 <li>J.-S. Wang, <i>MAIS(05/08) Injury Probability Curves as Functions of Delta V</i>, NHTSA DOT HS 813 219, 2022. <a href="https://crashstats.nhtsa.dot.gov/Api/Public/Publication/813219">Link</a>.</li>
 <li>L. Putze et al., “On Quantification for SOTIF Validation of Automated Driving Systems,” arXiv:2304.10170, 2023, Sec. IV-B. <a href="https://arxiv.org/abs/2304.10170">Link</a>.</li>
 <li>F. Warg et al., “The Quantitative Risk Norm – A Proposed Tailoring of HARA for ADS,” DSN Workshops, 2020, Sec. III. <a href="https://www.es.mdh.se/pdf_publications/5963.pdf">Link</a>.</li>
