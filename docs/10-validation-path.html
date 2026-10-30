@@ -1,0 +1,133 @@
+<title>From Acceptance Criteria to Test Hours</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap">
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],tags:'none'},svg:{fontCache:'global'}};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+<style>
+/* Layout: single-column journal article, narrow measure, numbered equations, booktabs tables */
+:root{
+  --paper:#fdfdfb; --ink:#161616; --muted:#5a5a57; --rule:#1d1d1d; --hair:#cfcfca; --link:#1b4a8c;
+  --serif:"STIX Two Text","Times New Roman",Times,serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#151515;--ink:#e9e8e3;--muted:#a7a6a0;--rule:#d9d8d2;--hair:#3a3a37;--link:#8fb3ea;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#151515;--ink:#e9e8e3;--muted:#a7a6a0;--rule:#d9d8d2;--hair:#3a3a37;--link:#8fb3ea;color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font:17px/1.55 var(--serif);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:48px 72px}
+article{max-width:700px;margin:0 auto}
+h1{font-size:28px;font-weight:600;text-align:center;line-height:1.25;margin:0 0 10px;text-wrap:balance}
+.meta{text-align:center;color:var(--muted);font-size:15px;margin-bottom:28px}
+.abstract{font-size:15.5px;margin:0 0 30px;padding:0 4%}
+.abstract b{font-variant:small-caps;letter-spacing:.04em}
+h2{font-size:18px;font-weight:600;margin:30px 0 8px}
+h2 .n{margin-right:10px}
+p{margin:0 0 10px;text-align:justify;hyphens:auto}
+.eq{display:grid;grid-template-columns:minmax(0,1fr) 40px;align-items:center;margin:12px 0;overflow-x:auto}
+.eq .no{text-align:right;color:var(--ink)}
+mjx-container[display="true"]{margin:0!important}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:8px 0 6px}
+.tw{overflow-x:auto}
+caption{caption-side:top;text-align:left;font-size:15px;margin-bottom:6px}
+caption b{font-variant:small-caps;letter-spacing:.04em}
+thead tr{border-top:1.5px solid var(--rule);border-bottom:.8px solid var(--rule)}
+tbody tr:last-child{border-bottom:1.5px solid var(--rule)}
+th,td{padding:5px 8px;text-align:left;vertical-align:top}
+th{font-weight:600}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{font-size:14px;color:var(--muted)}
+dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 16px;font-size:15.5px;margin:6px 0}
+dt{text-align:right} dd{margin:0}
+ol.refs{font-size:14.5px;padding-left:22px} ol.refs li{margin-bottom:5px}
+a{color:var(--link)}
+.claim{border-top:.8px solid var(--hair);border-bottom:.8px solid var(--hair);padding:10px 0;margin:14px 0;font-style:italic}
+@media (max-width:520px){body{font-size:16px}.abstract{padding:0}dl{grid-template-columns:minmax(0,1fr)}dt{text-align:left;font-weight:600}}
+</style>
+
+<article>
+<h1>From Acceptance Criteria to Test Hours: Budget Allocation and the Role of Importance Sampling in SOTIF Validation</h1>
+<div class="meta">Course note · SOTIF risk course · 30 October 2026</div>
+
+<div class="abstract"><b>Abstract.</b> The residual risk of an automated driving function is the sum, over hazardous behaviours, of their rate times the harm each occurrence causes. Splitting this sum lets the rate be shown by driving and the harm per occurrence by simulation. The split, not importance sampling, is what reduces the required driving by a factor of order \(1/W\). Importance sampling only makes the simulated harm term cheap to estimate. We state the six equations that lead from the acceptance criteria to test hours and simulation runs.</div>
+
+<h2><span class="n">1</span>Risk per acceptance criterion</h2>
+<p>For each severity class \(s\) with acceptance criterion \(A_s\) (harmed persons per hour), the residual risk must satisfy</p>
+<div class="eq"><div>\[ R_s \;=\; \sum_{b} r_b \, W_{b,s} \;\le\; A_s . \]</div><div class="no">(1)</div></div>
+<p>Here \(r_b\) is the rate of hazardous behaviour \(b\) per hour and \(W_{b,s}\) the expected number of persons harmed at severity \(\ge s\) per occurrence of \(b\).</p>
+
+<h2><span class="n">2</span>Harm per hazardous behaviour</h2>
+<p>Following ISO 21448 [1, C.2.1, Formula (C.1)], \(W\) decomposes over the hazardous events \(e\) that \(b\) can cause:</p>
+<div class="eq"><div>\[ W_{b,s} \;=\; \sum_{e} P_{E\mid b}\; P_{\bar C\mid E}\; \pi_{e,s}, \]</div><div class="no">(2)</div></div>
+<p>with exposure \(P_{E\mid b}\), probability of not controlling \(P_{\bar C\mid E}\), and severity fraction \(\pi_{e,s}\) obtained from \(\Delta v\) and an injury-risk function [2]. Each factor is below one, so typically \(W \sim 10^{-2}\text{–}10^{-4}\).</p>
+
+<h2><span class="n">3</span>Budget allocation</h2>
+<p>The validation targets \(r_b^{\max}\) are chosen to minimise total test effort subject to (1):</p>
+<div class="eq"><div>\[ \min_{r_1,\dots,r_n}\; \sum_{b=1}^{n} \frac{c_b\,\lambda_{k,b}}{r_b} \]</div><div class="no">(3a)</div></div>
+<div class="eq"><div>\[ \text{subject to}\quad \sum_{b=1}^{n} r_b\,W_{b,s} \;\le\; A_s \quad \text{for all } s , \]</div><div class="no">(3b)</div></div>
+<p>where \(c_b\) is the cost of one test hour and \(\lambda_{k,b}\) the statistical factor of Eq. (4). Problem (3) is convex; a solver returns \(r_b^{\max}\) and the binding class for each \(b\). For a single criterion \(A\), the Lagrange condition gives the closed form</p>
+<div class="eq"><div>\[ B_b \;=\; A\,\frac{\sqrt{c_b\,\lambda_{k,b}\,W_b}}{\sum_{i=1}^{n}\sqrt{c_i\,\lambda_{k,i}\,W_i}}, \qquad r_b^{\max} \;=\; \frac{B_b}{W_b}. \]</div><div class="no">(3c)</div></div>
+<p>The budget \(B_b\) is what behaviour \(b\) may contribute; \(r_b^{\max}\) is its validation target. The equal split \(B_b = A/n\) is feasible but not optimal [3, 4].</p>
+
+<h2><span class="n">4</span>Driving or replay hours</h2>
+<p>Showing \(r_b \le r_b^{\max}\) at confidence \(C\) with \(k\) observed events requires</p>
+<div class="eq"><div>\[ T_b \;=\; \frac{\lambda_{k,b}}{r_b^{\max}}, \qquad \lambda_{k} \;=\; \tfrac12\,\chi^2_{2(k+1)}(C), \qquad \lambda_0 \approx 3 \text{ at } C = 95\% . \]</div><div class="no">(4)</div></div>
+<p>Targeted driving in trigger contexts \(j\) (low sun, spray, gantries) is admissible if re-weighted by the exposure shares \(\nu_j\):</p>
+<div class="eq"><div>\[ r_b \;=\; \sum_j \nu_j\, r_{b,j} . \]</div><div class="no">(5)</div></div>
+
+<h2><span class="n">5</span>Simulation runs and importance sampling</h2>
+<p>The conditional probabilities in (2) are estimated by simulating logical scenarios with parameters \(\theta\) drawn from a proposal \(q\) that over-samples critical conditions, re-weighted to the real-world density \(f\) [1, C.5]:</p>
+<div class="eq"><div>\[ \hat P \;=\; \frac{1}{N}\sum_{i=1}^{N} \frac{f(\theta_i)}{q(\theta_i)}\,h_i, \qquad \mathrm{RSE} \;=\; \frac{\operatorname{sd}\!\big(h\,f/q\big)}{\sqrt{N}\,\hat P} . \]</div><div class="no">(6)</div></div>
+<p>\(h_i\) is the outcome of run \(i\) (collision indicator or injury probability). Non-critical runs enter with their weights and are part of the estimate. \(N\) is increased until the RSE is acceptable; the upper bound \(\bar W_{b,s}\) is used in the verdict.</p>
+
+<h2><span class="n">6</span>Verdict</h2>
+<div class="eq"><div>\[ \sum_{b} \bar r_b\, \bar W_{b,s} \;\le\; A_s \quad \text{for all } s, \qquad \sum_i (1 - C_i) \;\le\; 1 - C . \]</div><div class="no">(7)</div></div>
+<p>Bars denote upper confidence bounds; the second condition is the Bonferroni split of the error probability over all estimated terms [3]. The verdict is on the sum: one behaviour may exceed \(r_b^{\max}\) if others leave slack.</p>
+
+<h2><span class="n">7</span>Where the reduction comes from</h2>
+<div class="claim">Importance sampling does not reduce driving hours. The decomposition (1)–(2) does, by the factor \(1/W\); importance sampling reduces the number of simulation runs needed to estimate \(W\).</div>
+<div class="tw"><table>
+<caption><b>Table 1.</b> Required evidence for \(A = 10^{-7}\,\mathrm{h^{-1}}\), \(W = 5\cdot10^{-3}\), \(k=0\), \(C=95\%\).</caption>
+<thead><tr><th>Approach</th><th>Claim to show</th><th>Evidence</th><th class="num">Amount</th></tr></thead>
+<tbody>
+<tr><td>Direct field test</td><td>\(R \le A\)</td><td>driving</td><td class="num">\(3\cdot10^{7}\) h</td></tr>
+<tr><td>Decomposed, Eq. (4)</td><td>\(r \le A/W = 2\cdot10^{-5}\,\mathrm{h^{-1}}\)</td><td>driving / replay</td><td class="num">\(1.5\cdot10^{5}\) h</td></tr>
+<tr><td>\(W\) by plain Monte Carlo</td><td>\(\hat W\) with RSE \(\approx 10\%\)</td><td>simulation</td><td class="num">\(\sim 100/P\) runs</td></tr>
+<tr><td>\(W\) by importance sampling</td><td>same</td><td>simulation</td><td class="num">\(10^{3}\text{–}10^{4}\) runs</td></tr>
+</tbody></table></div>
+<p class="note">The price of the reduction is that \(W\) must be credible: simulation validated against real outcomes, and \(f\) derived from naturalistic data.</p>
+
+<h2><span class="n">8</span>Allocation of test cases to simulation and real driving</h2>
+<div class="tw"><table>
+<caption><b>Table 2.</b> Which quantity is measured where.</caption>
+<thead><tr><th>Quantity</th><th>Source</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>\(r_b\)</td><td>Real driving; open-loop replay of recordings through the release software</td><td>Hazardous behaviour originates in real sensor data</td></tr>
+<tr><td>\(P_{E\mid b}\), \(\nu_j\)</td><td>Fleet logs, naturalistic driving data</td><td>Frequencies of operational situations</td></tr>
+<tr><td>\(P_{\bar C\mid E}\), \(\pi_{e,s}\)</td><td>Simulation with importance sampling, Eq. (6)</td><td>Kinematics and other road users' reactions are simulable</td></tr>
+<tr><td>Simulation validity</td><td>Proving ground, selected real runs</td><td>Correlation of simulated and real outcomes</td></tr>
+</tbody></table></div>
+
+<h2>Notation</h2>
+<dl>
+<dt>\(A_s\)</dt><dd>acceptance criterion for severity class \(s\) [h\(^{-1}\)]</dd>
+<dt>\(r_b,\ r_b^{\max}\)</dt><dd>rate of hazardous behaviour \(b\); its validation target [h\(^{-1}\)]</dd>
+<dt>\(W_{b,s}\)</dt><dd>persons harmed at severity \(\ge s\) per occurrence of \(b\)</dd>
+<dt>\(\pi_{e,s}\)</dt><dd>persons harmed at severity \(\ge s\) per collision in hazardous event \(e\)</dd>
+<dt>\(B_b\)</dt><dd>risk budget of \(b\) [h\(^{-1}\)]</dd>
+<dt>\(c_b\)</dt><dd>relative cost of one test hour for \(b\)</dd>
+<dt>\(\lambda_{k}\)</dt><dd>\(\tfrac12\chi^2_{2(k+1)}(C)\), Poisson upper-bound factor</dd>
+<dt>\(T_b\)</dt><dd>driving or replay hours for \(b\)</dd>
+<dt>\(f,\ q\)</dt><dd>real-world and proposal densities of scenario parameters \(\theta\)</dd>
+<dt>\(\nu_j\)</dt><dd>exposure share of trigger context \(j\)</dd>
+</dl>
+
+<h2>References</h2>
+<ol class="refs">
+<li>ISO 21448:2022, <i>Road vehicles — Safety of the intended functionality</i>. Annex C.2.1, Formula (C.1), pp. 126–127; Annex C.5, pp. 145–152.</li>
+<li>J.-S. Wang, <i>MAIS(05/08) Injury Probability Curves as Functions of Delta V</i>, NHTSA DOT HS 813 219, 2022. <a href="https://crashstats.nhtsa.dot.gov/Api/Public/Publication/813219">Link</a>.</li>
+<li>L. Putze et al., “On Quantification for SOTIF Validation of Automated Driving Systems,” arXiv:2304.10170, 2023, Sec. IV-B. <a href="https://arxiv.org/abs/2304.10170">Link</a>.</li>
+<li>F. Warg et al., “The Quantitative Risk Norm – A Proposed Tailoring of HARA for ADS,” DSN Workshops, 2020, Sec. III. <a href="https://www.es.mdh.se/pdf_publications/5963.pdf">Link</a>.</li>
+<li>M. Werling, R. Faller, W. Betz, D. Straub, “Safety integrity framework for automated driving,” arXiv:2503.20544, 2025. <a href="https://arxiv.org/abs/2503.20544">Link</a>.</li>
+</ol>
+</article>
